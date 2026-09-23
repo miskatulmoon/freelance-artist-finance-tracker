@@ -26,6 +26,21 @@ def _extract_json(text: str) -> dict:
     return json.loads(match.group(0))
 
 
+def _validate_categorization(type: str, result: object) -> dict:
+    if not isinstance(result, dict):
+        raise ValueError("categorization response must be a JSON object")
+
+    field = "source" if type == "income" else "category"
+    choices = set(Source) if type == "income" else set(Category)
+    label = result.get(field)
+    confidence = result.get("confidence")
+    if label not in choices:
+        raise ValueError(f"invalid {field} in categorization response")
+    if not isinstance(confidence, (int, float)) or not 0 <= confidence <= 1:
+        raise ValueError("categorization confidence must be between 0 and 1")
+    return {field: label, "confidence": float(confidence)}
+
+
 class OpenAIClient:
     def __init__(self, settings: Settings):
         self.client = OpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url, timeout=45.0)
@@ -224,9 +239,11 @@ class FallbackClient:
 
     def categorize(self, type: str, description: str, merchant: str, amount: float) -> dict:
         try:
-            return self.primary.categorize(type, description, merchant, amount)
+            result = self.primary.categorize(type, description, merchant, amount)
+            return _validate_categorization(type, result)
         except Exception:
-            return self.fallback.categorize(type, description, merchant, amount)
+            result = self.fallback.categorize(type, description, merchant, amount)
+            return _validate_categorization(type, result)
 
     def narrate_insights(self, metrics: dict) -> str:
         try:

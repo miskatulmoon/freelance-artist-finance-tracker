@@ -1,6 +1,7 @@
 from datetime import date as DateType
 from typing import Literal
 
+from pydantic import model_validator
 from sqlmodel import Field, SQLModel
 
 from app.models import Category, CommissionStatus, Source
@@ -16,6 +17,17 @@ class TransactionCreate(SQLModel):
     category: Category | None = None
     merchant: str | None = None
 
+    @model_validator(mode="after")
+    def validate_financial_fields(self) -> "TransactionCreate":
+        validate_transaction_fields(
+            self.type,
+            self.amount,
+            self.fee_amount,
+            self.source,
+            self.category,
+        )
+        return self
+
 
 class TransactionUpdate(SQLModel):
     amount: float | None = Field(default=None, gt=0)
@@ -25,6 +37,23 @@ class TransactionUpdate(SQLModel):
     source: Source | None = None
     category: Category | None = None
     merchant: str | None = None
+
+
+def validate_transaction_fields(
+    type: str,
+    amount: float,
+    fee_amount: float | None,
+    source: Source | str | None,
+    category: Category | str | None,
+) -> None:
+    if type == "income" and category is not None:
+        raise ValueError("income transactions cannot have an expense category")
+    if type == "expense" and source is not None:
+        raise ValueError("expense transactions cannot have an income source")
+    if type == "expense" and fee_amount is not None:
+        raise ValueError("expense transactions cannot have a fee")
+    if fee_amount is not None and fee_amount > amount:
+        raise ValueError("fee_amount cannot exceed amount")
 
 
 class TransactionRead(SQLModel):

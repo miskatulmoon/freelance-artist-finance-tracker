@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import Transaction
-from app.schemas import TransactionCreate, TransactionRead, TransactionUpdate
+from app.schemas import TransactionCreate, TransactionRead, TransactionUpdate, validate_transaction_fields
 from app.services.llm import LLMClient, get_llm
 from app.services.stats import net_amount
 
@@ -105,6 +105,16 @@ def update_transaction(transaction_id: int, payload: TransactionUpdate, session:
         data["source"] = data["source"].value if data["source"] else None
     if "category" in data:
         data["category"] = data["category"].value if data["category"] else None
+    try:
+        validate_transaction_fields(
+            tx.type,
+            data.get("amount", tx.amount),
+            data.get("fee_amount", tx.fee_amount),
+            data.get("source", tx.source),
+            data.get("category", tx.category),
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
     for key, value in data.items():
         setattr(tx, key, value)
     session.add(tx)

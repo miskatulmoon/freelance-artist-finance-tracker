@@ -21,6 +21,18 @@ def test_create_expense_autocategorizes(client):
     assert body["auto_categorized"] is True
 
 
+def test_invalid_llm_categorization_falls_back():
+    from app.services.llm import FallbackClient
+
+    class InvalidLLM:
+        def categorize(self, type, description, merchant, amount):
+            return {"source": "not-a-source", "confidence": 2}
+
+    result = FallbackClient(InvalidLLM()).categorize("income", "etsy print", "", 15)
+
+    assert result == {"source": "etsy", "confidence": 0.6}
+
+
 def test_create_income_with_explicit_source_skips_autocat(client):
     r = client.post(
         "/transactions",
@@ -48,6 +60,40 @@ def test_create_rejects_bad_type(client):
 def test_create_rejects_nonpositive_amount(client):
     r = client.post("/transactions", json={"type": "income", "amount": 0, "description": "x"})
     assert r.status_code == 422
+
+
+def test_create_rejects_fee_larger_than_income(client):
+    r = client.post(
+        "/transactions",
+        json={"type": "income", "amount": 10, "fee_amount": 10.01, "description": "x"},
+    )
+    assert r.status_code == 422
+
+
+def test_create_rejects_fields_for_wrong_transaction_type(client):
+    income = client.post(
+        "/transactions",
+        json={"type": "income", "amount": 10, "category": "supplies", "description": "x"},
+    )
+    expense = client.post(
+        "/transactions",
+        json={"type": "expense", "amount": 10, "source": "etsy", "description": "x"},
+    )
+    assert income.status_code == 422
+    assert expense.status_code == 422
+
+
+def test_patch_rejects_invalid_merged_state(client, session):
+    from tests.conftest import make_tx
+
+    session.add(make_tx("income", 10.0, "sale", source="etsy"))
+    session.commit()
+    row_id = client.get("/transactions").json()[0]["id"]
+
+    response = client.patch(f"/transactions/{row_id}", json={"fee_amount": 10.01})
+
+    assert response.status_code == 422
+    assert client.get("/transactions").json()[0]["fee_amount"] is None
 
 
 def test_list_and_filter_by_source(client, session):
