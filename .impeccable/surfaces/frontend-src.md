@@ -1,15 +1,22 @@
 ---
 version: 1
 slug: "frontend-src"
+primary_target: "frontend-src"
+related_targets: ["frontend/src/App.tsx","frontend/src/index.css","frontend/src/components/Dashboard.tsx","frontend/src/components/Landing.tsx","frontend/src/components/Sidebar.tsx","frontend/src/components/AssistantWidget.tsx"]
+---
+
+---
+version: 2
+slug: "frontend-src"
 primary_target: "frontend/src"
-related_targets: ["frontend/src/App.tsx","frontend/src/index.css","frontend/src/components/Dashboard.tsx","frontend/src/components/Transactions.tsx","frontend/src/components/Commissions.tsx","frontend/src/components/Chat.tsx"]
+related_targets: ["frontend/src/App.tsx","frontend/src/index.css","frontend/src/components/Dashboard.tsx","frontend/src/components/Transactions.tsx","frontend/src/components/Commissions.tsx","frontend/src/components/Landing.tsx","frontend/src/components/Sidebar.tsx","frontend/src/components/AssistantWidget.tsx"]
 ---
 
 # StudioLedger app surface brief
 
 ## Scope and visitor mode
 
-Whole-interface redesign of the StudioLedger SPA (Dashboard, Transactions, Commissions, Assistant tabs). Visitor mode: **Operate** — a freelance artist logs money and reads their studio's health. Single-user, no auth, portfolio project.
+The StudioLedger SPA after the product-shell pass: an entry page, a left-nav shell (Ledger, Slips, Commissions), and the assistant as a corner widget. Entry: **Persuade** (one action, then in). Sections: **Operate** — a freelance artist logs money and reads their studio's health. Single-user, no auth, portfolio project.
 
 ## Audience and job
 
@@ -17,26 +24,26 @@ A freelance artist (illustrator/painter/crafter) at a daylight desk, juggling co
 
 ## Chosen direction
 
-**The watercolor swatch palette** (pick card; roll key `cd953953`, kind `pick`). The interface is the artist's mixing chart: warm paper ground, ink and a true tabular mono for every figure, a handful of real pigment families carrying meaning, the assistant as a pinned paper note rather than a dashboard hero.
+**The watercolor swatch palette** (pick card; roll key `cd953953`, kind `pick`), extended in-shell: same warm paper world, now framed by a ruled left rail and a tuck-away corner pencil. The interface is the artist's mixing chart; navigation is the rail of a ledger, and the assistant is a note you can set down or put away.
 
 ## Direction contract
 
-THESIS: Money takes the material of the artist's own palette — the surface is a mixing-chart wash on warm paper where each income source is a pigment and every figure is inked in mono; it refuses the dark-glass "AI SaaS" field and the hero-metric template, and refuses to let the assistant sit above the ledger it serves.
+THESIS: StudioLedger is opened from a quiet paper entry page (one action — Open your ledger) and then lives behind a ruled left rail — Ledger, Slips, Commissions — while the assistant is demoted out of navigation to a pen-nib the artist lifts and tucks into the corner; it refuses the buy-now landing, the cluttered top tab strip, and any world where AI is a required destination instead of an optional note.
 
-OWN-WORLD: Warm ivory paper ground (ink, graphite, hairline pencil rules), one trusted mono for all numbers (IBM Plex Mono), a warm humanist UI face for everything else (Karla); pigment family = income source (commission indigo, Etsy ochre, Patreon rose, other viridian; income warm, spend cool, one vermilion action accent used sparingly). Cards are swatch slips: paper, hairline border, faint warm shadow, small tracked pigment labels; chart bars read as washes (rounded, vertical pigment gradient); tables are ruled ledger lines; pills are tinted pigment chips; a faint paper grain keeps it physical, never busy.
+OWN-WORLD: The world is unchanged: warm ivory paper ground, ink + graphite + hairline rules, IBM Plex Mono for every figure, Karla for prose, Caveat for the hand (tagline, note heads, stamp); pigment family per income source; one vermilion action accent. The new shells draw only from these tokens: the rail is vivid paper over paper ground with a rule hairline and a single vermilion active state; the corner assistant is a vivid note with a soft paper lift whose minimize control is the quiet inset pill; nav icons are authored 1.5px line strokes in ink tones.
 
-STORY: The artist opens their ledger and instantly reads what the work is worth — committed, colored by where it came from — finds today's slip, logs the piece in an hour, and when they want an opinion the assistant writes a note onto the page. They believe their numbers are theirs, correct, and drawn from what they logged; the assistant is a bonus pencil, not the product.
+STORY: The artist lands on a paper entry page and opens the ledger; the desk becomes two panels — a fixed rail and the page. They move between the three sections from the rail (a bottom tab bar on phones), read their numbers, and lift the corner pencil whenever they want the assistant, tucking it away when done.
 
-FIRST VIEWPORT: A ruled page: header row with the four-pigment brush-mark logo + "StudioLedger" and tagline "the little ledger for what your art makes"; pigment-chip tab bar (Dashboard, Transactions, Commissions, Assistant — assistant last, tucked). Four margin-note stat blocks across the top in mono ink; a two-column chart spread (income by source as pigment washes, monthly ink trend); cash-flow slice and the assistant's note card placed after the charts, at the bottom of the page, its "Make me a note" button the single primary action below the fold.
+FIRST VIEWPORT: A vivid-paper left rail (236px) carries the brand mark + wordmark + tagline, three stroke-icon nav items (Ledger, Slips, Commissions) with the active one tinted vermilion, and a quiet pigment-dot footer; the content page rules under a section header (title + hint) and opens into the mono-ink stat grid. Mobile (≤760px): the rail becomes a fixed bottom tab bar, and the assistant sits as a pen-nib fab above it, opening into a margin-fitted note panel.
 
-FORM: Pick card — watercolor swatch palette, my ranked position 1 of 7, seed cd953953 (kind `pick`).
+FORM: Pick card — watercolor swatch palette, seed cd953953 (kind `pick`), extended in-shell; no new concept roll.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
 
 ## Memorable moment
 
-"Make me a note": the assistant's commentary pencils itself onto the page (fade + slight rise + ink reveal) instead of loading like a dashboard panel.
+The corner pencil: the assistant opens with the note-ink reveal — a note being set down on the desk — and tucks back to a pen-nib fab; entry washes in once only, on the paper page.
 
 ## Unresolved decisions
 
-- None blocking; copy refresh only where the brief calls for it (tagline, tab label "Assistant", coach card copy, auto-tag chip wording).
+- None blocking. The in-page "A note from your assistant" card was moved into the widget per user choice; copy stands as seeded and stylistically consistent.

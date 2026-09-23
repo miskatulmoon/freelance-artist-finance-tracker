@@ -91,47 +91,6 @@ function DashboardSkeleton() {
   )
 }
 
-function AINote() {
-  const [insights, setInsights] = useState<string | null>(null)
-  const [radarText, setRadarText] = useState<string | null>(null)
-  const [working, setWorking] = useState(false)
-  const [error, setError] = useState('')
-
-  const runInsights = async () => {
-    setWorking(true)
-    setError('')
-    try {
-      const [i, c] = await Promise.all([api.getInsights(), api.getRadarNarrative()])
-      setInsights(i.insights)
-      setRadarText(`${c.narrative}`)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed')
-    } finally {
-      setWorking(false)
-    }
-  }
-
-  return (
-    <section className="note">
-      <h2 className="note-head">A note from your assistant</h2>
-      <p className="note-copy">
-        Ask it to read your ledger and pencil in what the numbers mean — stream health, your effective rate, and the next
-        30 days.
-      </p>
-      <button className="btn" style={{ marginTop: 12 }} onClick={runInsights} disabled={working}>
-        {working ? 'Penciling…' : 'Make me a note'}
-      </button>
-      {error && <p className="error" style={{ marginTop: 10 }}>{error}</p>}
-      {insights && (
-        <div className="insights-box note-reveal" style={{ marginTop: 12 }}>{insights}</div>
-      )}
-      {radarText && (
-        <div className="insights-box note-reveal" style={{ marginTop: 10 }}>{radarText}</div>
-      )}
-    </section>
-  )
-}
-
 export function Dashboard() {
   const { summary, radar, loading, error } = useDashboard()
 
@@ -279,8 +238,6 @@ export function Dashboard() {
           </div>
         </div>
       </div>
-
-      <AINote />
     </div>
   )
 }

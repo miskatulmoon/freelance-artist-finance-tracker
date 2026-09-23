@@ -120,7 +120,7 @@ components:
 
 StudioLedger is the little ledger that lives on an artist's desk — a daylight-studio relic made of warm ivory paper, hand-inked annotations, and the tube colors of real pigments. Money is not a dashboard's abstraction here; it is something measured by hand, sources labeled in their own paint colors, running totals set in typewriter-style numerals on a ruled page. The whole screen is one long paper ground with painters' wash tints bleeding into the bars.
 
-The voice is warm and candid, unhurried, and a little worn-in: a note from an assistant reads like a friend writing by hand, an auto-categorized slip carries a rubber-stamped "auto", and the tagline is script, not marketing type. Density is calm — one column of cards over a ~1120px measure, figures large enough to read across the room — and the interface never performs "artiness": it behaves like a ledger that happens to be painted. The AI does not headline anything; it is an assistant note beneath the charts and a quiet tab at the end of the row.
+The voice is warm and candid, unhurried, and a little worn-in: a note from an assistant reads like a friend writing by hand, an auto-categorized slip carries a rubber-stamped "auto", and the tagline is script, not marketing type. Density is calm — a fixed left rail and one column of cards over a ~1120px measure, figures large enough to read across the room — and the interface never performs "artiness": it behaves like a ledger that happens to be painted. The AI does not headline anything; it is a corner pencil you lift when you want it and tuck away when you do not — never a navigation item, never between the artist and the ledger.
 
 The composition gap from the previous AI-SaaS build is deliberate: no dark slate, no glow, no orbit-graph hero. StudioLedger is a light scene (daylight studio), and the palette carries that scene, never the category.
 
@@ -181,7 +181,7 @@ A paintbox palette: three warm papers for ground and surfaces, an ink family for
 
 ## Layout
 
-A single ~1120px paper column (`max-width: 1120px`, centered, `padding: 28px 22px 90px`), ruled shut by two hairlines: one under the header, one under the tab row. Cards sit in a `16px`-gap grid that holds to one column at ≤560px, two at ≤900px, and fills the three/four-col pattern above. Wide tables never break the page: on narrow screens they scroll inside their own `.table-wrap` (overflow-x, touch scrolling) rather than stretching the document. Density is set to let figures and rows breathe — 8–18px of padding, more air above a heading than below it.
+Two panels on the desk: a fixed vivid-paper left rail (236px) for the brand and the three-section navigation, and a single ~1120px paper page beside it (`max-width: 1120px`, centered, `padding: 30px 26px 120px`), ruled shut by a hairline under the section header. Below 760px the rail steps down to a fixed bottom tab bar so the sections stay thumb-high; the page padding opens at the base to clear it. Cards sit in a `16px`-gap grid that holds to one column at ≤560px, two at ≤900px, and fills the three/four-col pattern above. Wide tables never break the page: on narrow screens they scroll inside their own `.table-wrap` (overflow-x, touch scrolling) rather than stretching the document. Density is set to let figures and rows breathe — 8–18px of padding, more air above a heading than below it.
 
 ## Elevation & Depth
 
@@ -209,9 +209,10 @@ Radius is gentle but visible: **extra-small** 9px (inputs and buttons), **small/
 - **Style:** inset paper base, rule-tinted hairline border, 2px 9px padding, 11.5px weight 600, radius 999. Text graphite by default.
 - **Source / status variants:** tint the chip from the source or status pigment — background at 11–13%, border at 34%, text at the ink-blocked tone (≥4.5:1). The money column itself never takes a chip; the pill annotates the figure.
 
-### Tabs (navigation)
-- **Style:** pill buttons of vivid paper with hairline borders; 600-weight 14px; hover darkens text to ink.
-- **Active:** accent-soft fill, vermilion-tinted border, accent-hover text; the row's underline is the same `rule` hairline as the header. Assistant sits last — deliberately the quietest tab, not the first thing offered.
+### Navigation (side rail & bottom tab bar)
+- Ledger, Slips, and Commissions live in a vivid-paper left rail with authored 1.5px line-stroke icons (an open ledger, a receipt slip, a brush) in one consistent weight. A nav item is quiet ink-soft text; hover warms it to ink on a faint inset wash; active is vermilion — accent-soft fill, vermilion-tinted border, accent-hover text, `aria-current="page"`.
+- Below 760px the rail becomes a fixed bottom tab bar of three equal tinted buttons; the assistant only ever appears as the corner pencil, never in navigation.
+- The section header rules the page under a hairline, closing the band exactly as the old header did.
 
 ### Cards / Containers
 - **Corner Style:** large (14px). **Background:** vivid paper. **Shadow:** Soft Paper Lift. **Border:** 1px hairline. **Internal Padding:** 18px.
@@ -223,6 +224,9 @@ Radius is gentle but visible: **extra-small** 9px (inputs and buttons), **small/
 
 ### Notes (assistant note)
 - The assistant's picture is a note on the desk, not a pane: vivid paper, 12px radius, soft shadow, and a Caveat head ("A note from your assistant") above short Karla copy. Text arrives through the one authored moment — the **note-ink** reveal (rise 5px, blur 3px → clear, 0.32s `cubic-bezier(.16,1,.3,1)`) — and then rests still. No entrance for anything else.
+
+### Assistant widget (corner pencil)
+- The assistant is a pen-nib fab pinned to the bottom-right corner (56px circle, vivid paper, hairline border, Soft Paper Lift; nib in ink-soft, warming to ink). Open, it unfolds as a `380px` vivid-paper note panel — `min(600px, viewport − 120px)` deep — with the Caveat head, a pencil-and-suggestions chat, and an inset-pill minimize control that drops it back to the nib. The note-ink reveal is its one entrance; the nib rotates a quarter turn when expanded. On phones it sits above the tab bar as a margin-fitted sheet (12px gutters).
 
 ### Stamp (auto-tag)
 - A hand-stamped "auto": Caveat 600 14px in teal tone, background 9% teal, border 40% teal, 1px radius 5, rotated -1deg, sitting on the slip's row beside the merchant.
@@ -241,7 +245,7 @@ Radius is gentle but visible: **extra-small** 9px (inputs and buttons), **small/
 
 ### Don't:
 - **Don't** darken the scene. The ground stays ivory paper (#f6efe0); no dark mode, no slate, no glow — the scene is a daylight studio.
-- **Don't** promote the assistant above the charts or past the last tab. AI is the quiet note and the end-of-row tab.
+- **Don't** promote the assistant out of the corner. AI is the quiet note and the corner pencil — never a navigation item, never between the artist and the ledger.
 - **Don't** use a system display face, gradient text, or emoji glyphs as icons; the mark is an authored SVG brushwork gesture.
 - **Don't** add kickers/eyebrows above headings, five-card icon rows, or hero-metric hero templates — the stat grid carries the story.
 - **Don't** set hard offset shadows (`4px 4px 0`) or zero-blur shadows; lift comes from the Soft Paper Lift token or tone.

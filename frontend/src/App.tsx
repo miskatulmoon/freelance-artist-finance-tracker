@@ -1,63 +1,33 @@
 import { useState } from 'react'
-import { Assistant } from './components/Assistant'
+import { AssistantWidget } from './components/AssistantWidget'
 import { Commissions } from './components/Commissions'
 import { Dashboard } from './components/Dashboard'
+import { Landing } from './components/Landing'
+import { NavItems, SectionTitle, Sidebar } from './components/Sidebar'
+import type { Section } from './components/Sidebar'
 import { Transactions } from './components/Transactions'
 
-type Tab = 'dashboard' | 'transactions' | 'commissions' | 'assistant'
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'dashboard', label: 'Ledger' },
-  { id: 'transactions', label: 'Slips' },
-  { id: 'commissions', label: 'Commissions' },
-  { id: 'assistant', label: 'Assistant' },
-]
-
-function BrandMark() {
-  return (
-    <svg width="26" height="32" viewBox="0 0 26 32" fill="none" aria-hidden="true">
-      <rect x="1" y="8" width="7.4" height="23" rx="3.7" fill="#5b52c4" />
-      <rect x="9.3" y="8" width="7.4" height="23" rx="3.7" fill="#bd8a2e" />
-      <rect x="17.6" y="8" width="7.4" height="23" rx="3.7" fill="#c75d8a" />
-      <ellipse cx="4.5" cy="7" rx="6" ry="3.4" fill="#5b52c4" opacity="0.55" />
-      <ellipse cx="13" cy="7" rx="5.6" ry="3.2" fill="#bd8a2e" opacity="0.55" />
-      <ellipse cx="21.2" cy="7" rx="5.6" ry="3.2" fill="#c75d8a" opacity="0.55" />
-    </svg>
-  )
-}
-
 export default function App() {
-  const [tab, setTab] = useState<Tab>('dashboard')
+  const [entered, setEntered] = useState(false)
+  const [section, setSection] = useState<Section>('ledger')
+
+  if (!entered) return <Landing onEnter={() => setEntered(true)} />
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="brand-row">
-          <span className="brand-mark">
-            <BrandMark />
-          </span>
-          <div>
-            <h1>
-              <span className="brand">StudioLedger</span>
-            </h1>
-            <div className="tagline">the little ledger for what your art makes</div>
-          </div>
+    <div className="shell">
+      <Sidebar section={section} onChange={setSection} />
+      <main className="content">
+        <div className="page">
+          <SectionTitle section={section} />
+          {section === 'ledger' && <Dashboard />}
+          {section === 'slips' && <Transactions />}
+          {section === 'commissions' && <Commissions />}
         </div>
-        <div className="subtitle">commissions · Etsy · Patreon</div>
-      </header>
-
-      <nav className="tabs" aria-label="Ledger sections">
-        {TABS.map((t) => (
-          <button key={t.id} className={tab === t.id ? 'active' : ''} onClick={() => setTab(t.id)}>
-            {t.label}
-          </button>
-        ))}
+      </main>
+      <nav className="tabbar" aria-label="Ledger sections">
+        <NavItems section={section} onChange={setSection} vertical={false} />
       </nav>
-
-      {tab === 'dashboard' && <Dashboard />}
-      {tab === 'transactions' && <Transactions />}
-      {tab === 'commissions' && <Commissions />}
-      {tab === 'assistant' && <Assistant />}
+      <AssistantWidget />
     </div>
   )
 }
