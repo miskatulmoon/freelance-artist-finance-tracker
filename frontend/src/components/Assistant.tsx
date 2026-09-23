@@ -14,11 +14,11 @@ const SUGGESTIONS = [
   'What is my projected balance in 30 days?',
 ]
 
-export function Chat() {
+export function Assistant() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      text: 'Ask me anything about your finances — I read your actual numbers right now, so questions like "what did I clear on Etsy after fees?" get concrete answers.',
+      text: 'Ask me anything about your studio\u2019s money — I read your real numbers, so "what did I clear on Etsy after fees?" gets a concrete answer.',
     },
   ])
   const [input, setInput] = useState('')
@@ -53,19 +53,23 @@ export function Chat() {
 
   return (
     <div className="stack">
-      <div className="card">
-        <h3>Chat with your finances</h3>
-        <div className="chat-log" ref={logRef}>
+      <section className="note">
+        <h2 className="note-head">Ask your ledger</h2>
+        <p className="note-copy">
+          Your numbers stay in your own books; the assistant reads them and writes an answer in the margin. Nothing here
+          leaves your ledger.
+        </p>
+        <div className="chat-log" ref={logRef} role="log" aria-live="polite">
           {messages.map((m, i) => (
-            <div key={i} className={`chat-msg ${m.role}`}>
+            <div key={i} className={`chat-msg ${m.role}${m.role === 'assistant' ? ' note-reveal' : ''}`}>
               {m.text}
             </div>
           ))}
-          {busy && <div className="chat-msg assistant loading">Reading your numbers…</div>}
+          {busy && <div className="chat-msg assistant loading">Penciling…</div>}
         </div>
         {error && <p className="error">{error}</p>}
-        <div className="text-dim" style={{ fontSize: 12, marginTop: 12 }}>
-          Try:
+        <div className="text-dim" style={{ fontSize: 12, marginTop: 12, fontWeight: 600 }}>
+          Try asking:
         </div>
         <div className="form-row" style={{ marginTop: 6 }}>
           {SUGGESTIONS.map((s) => (
@@ -80,12 +84,13 @@ export function Chat() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="e.g. How much did Etsy make after fees?"
             disabled={busy}
+            aria-label="Ask the assistant a question"
           />
           <button className="btn" disabled={busy || !input.trim()}>
             Ask
           </button>
         </form>
-      </div>
+      </section>
     </div>
   )
 }

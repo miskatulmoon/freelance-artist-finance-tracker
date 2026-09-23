@@ -15,6 +15,13 @@ const EMPTY_FORM = {
 
 const STATUSES = ['agreed', 'in_progress', 'completed', 'cancelled']
 
+const STATUS_TONE: Record<string, string> = {
+  agreed: 'tone-commission',
+  in_progress: 'tone-etsy',
+  completed: 'tone-other',
+  cancelled: '',
+}
+
 export function Commissions() {
   const [rows, setRows] = useState<Commission[]>([])
   const [form, setForm] = useState({ ...EMPTY_FORM })
@@ -78,8 +85,8 @@ export function Commissions() {
       <form className="card" onSubmit={submit}>
         <h3>Log a commission</h3>
         <p className="text-dim" style={{ fontSize: 13, margin: '6px 0 0' }}>
-          Track agreed work. Once the client pays, record the income in Transactions and link it here — we&apos;ll
-          compute your effective hourly rate.
+          Track agreed work. Once the client pays, record the income in Slips and link it here — the ledger works out your
+          effective hourly rate.
         </p>
         <div className="form-row" style={{ marginTop: 12 }}>
           <label className="field">
@@ -137,56 +144,59 @@ export function Commissions() {
         <h3>
           Commissions <span className="text-dim">· {totalHours} hrs logged</span>
         </h3>
-        {loading && <div className="loading">Loading…</div>}
+{loading && <div className="loading">Loading…</div>}
         {!loading && (
-          <table className="table" style={{ marginTop: 8 }}>
-            <thead>
-              <tr>
-                <th>Client</th>
-                <th>Piece</th>
-                <th>Status</th>
-                <th className="num">Agreed</th>
-                <th className="num">Hours</th>
-                <th className="num">$/hr</th>
-                <th>Expected</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((c) => (
-                <tr key={c.id}>
-                  <td>{c.client}</td>
-                  <td className="text-dim">{c.piece}</td>
-                  <td>
-                    <span className="pill">{c.status.replace('_', ' ')}</span>
-                  </td>
-                  <td className="num money">{c.amount !== null ? fmtMoney(c.amount) : '—'}</td>
-                  <td className="num text-dim">{c.hours_spent}</td>
-                  <td className="num">{c.effective_rate !== null ? fmtMoney(c.effective_rate) : '—'}</td>
-                  <td className="text-dim">{c.expected_date ?? '—'}</td>
-                  <td className="num">
-                    <button className="link-danger" onClick={() => void remove(c.id)}>
-                      delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
+          <div className="table-wrap" style={{ marginTop: 8 }}>
+            <table className="table">
+              <thead>
                 <tr>
-                  <td colSpan={8} className="text-dim">
-                    No commissions yet — log your next piece above.
-                  </td>
+                  <th>Client</th>
+                  <th>Piece</th>
+                  <th>Status</th>
+                  <th className="num">Agreed</th>
+                  <th className="num">Hours</th>
+                  <th className="num">$/hr</th>
+                  <th>Expected</th>
+                  <th></th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.client}</td>
+                    <td className="text-dim">{c.piece}</td>
+                    <td>
+                      <span className={`pill ${STATUS_TONE[c.status] ?? ''}`}>{c.status.replace('_', ' ')}</span>
+                    </td>
+                    <td className="num money">{c.amount !== null ? fmtMoney(c.amount) : '—'}</td>
+                    <td className="num text-dim">{c.hours_spent}</td>
+                    <td className="num">{c.effective_rate !== null ? fmtMoney(c.effective_rate) : '—'}</td>
+                    <td className="text-dim">{c.expected_date ?? '—'}</td>
+                    <td className="num">
+                      <button className="link-danger" onClick={() => void remove(c.id)}>
+                        delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="text-dim">
+                      No commissions yet — log the piece on your desk right now. Once it&apos;s paid and the hours are
+                      in, the ledger tells you what your time was worth.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       {rows.some((c) => c.effective_rate !== null) && (
-        <div className="card" style={{ borderColor: 'rgba(139,124,246,0.5)' }}>
-          <h3>Why this matters</h3>
-          <p className="text-dim" style={{ fontSize: 13.5, lineHeight: 1.6, margin: '8px 0 0' }}>
+        <div className="card" style={{ borderColor: 'var(--hairline)', borderStyle: 'dashed' }}>
+          <h2 className="note-head">Why this matters</h2>
+          <p className="text-dim" style={{ fontSize: 13.5, lineHeight: 1.6, margin: '6px 0 0' }}>
             Your effective rate is paid income ÷ hours worked. If a <i>{fmtMoney(500)}</i> portrait took <b>20 h</b>,
             that&apos;s <b>{fmtMoney(25)}/hr</b> — probably below minimum wage. Comparing pieces this way is the fastest
             way to see which work is worth pricing higher.

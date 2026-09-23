@@ -19,6 +19,21 @@ const CATEGORIES: { value: string; label: string }[] = [
   { value: 'other_expense', label: 'Other' },
 ]
 
+const SOURCE_TONE: Record<string, string> = {
+  commission: 'tone-commission',
+  etsy: 'tone-etsy',
+  patreon: 'tone-patreon',
+  other_income: 'tone-other',
+}
+
+const CATEGORY_TONE: Record<string, string> = {
+  supplies: 'tone-other',
+  platform_fees: 'tone-etsy',
+  subscriptions: 'tone-patreon',
+  equipment: 'tone-commission',
+  other_expense: '',
+}
+
 const EMPTY_FORM = {
   type: 'income' as 'income' | 'expense',
   amount: '',
@@ -91,7 +106,7 @@ export function Transactions() {
   return (
     <div className="stack">
       <form className="card" onSubmit={submit}>
-        <h3>Add transaction</h3>
+        <h3>Log a slip</h3>
         <div className="form-row" style={{ marginTop: 10 }}>
           <select value={form.type} onChange={(e) => set('type', e.target.value)}>
             <option value="income">Income</option>
@@ -168,58 +183,65 @@ export function Transactions() {
       </form>
 
       <div className="card">
-        <h3>All transactions</h3>
+        <h3>All slips</h3>
         {loading && <div className="loading">Loading…</div>}
         {!loading && (
-          <table className="table" style={{ marginTop: 8 }}>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Description</th>
-                <th>Type</th>
-                <th>Tag</th>
-                <th className="num">Amount</th>
-                <th className="num">Net</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((t) => (
-                <tr key={t.id}>
-                  <td className="text-dim">{t.date}</td>
-                  <td>
-                    {t.description}
-                    {t.merchant && <span className="text-dim"> · {t.merchant}</span>}
-                    {t.auto_categorized && (
-                      <span className="badge-ai" title="Tagged automatically by the AI">
-                        AI
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    <span className={`pill ${t.type}`}>{t.type}</span>
-                  </td>
-                  <td className="text-dim">{t.type === 'income' ? t.source : t.category}</td>
-                  <td className={`num ${t.type === 'income' ? 'stat-positive' : 'stat-negative'}`}>
-                    {fmtMoney(t.amount)}
-                  </td>
-                  <td className="num text-dim">{fmtMoney(t.net_amount)}</td>
-                  <td className="num">
-                    <button className="link-danger" onClick={() => void remove(t.id)}>
-                      delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
+          <div className="table-wrap" style={{ marginTop: 8 }}>
+            <table className="table">
+              <thead>
                 <tr>
-                  <td colSpan={7} className="text-dim">
-                    No transactions yet — add your first one above.
-                  </td>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Type</th>
+                  <th>Tag</th>
+                  <th className="num">Amount</th>
+                  <th className="num">Net</th>
+                  <th></th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((t) => (
+                  <tr key={t.id}>
+                    <td className="text-dim">{t.date}</td>
+                    <td>
+                      {t.description}
+                      {t.merchant && <span className="text-dim"> · {t.merchant}</span>}
+                      {t.auto_categorized && (
+                        <span className="stamp" title="Tagged automatically from your description">
+                          auto
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <span className={`pill ${t.type}`}>{t.type}</span>
+                    </td>
+                    <td>
+                      <span className={`pill ${t.type === 'income' ? SOURCE_TONE[t.source ?? ''] ?? '' : CATEGORY_TONE[t.category ?? ''] ?? ''}`}>
+                        {t.type === 'income' ? t.source : t.category}
+                      </span>
+                    </td>
+                    <td className={`num ${t.type === 'income' ? 'stat-positive' : 'stat-negative'}`}>
+                      {fmtMoney(t.amount)}
+                    </td>
+                    <td className="num text-dim">{fmtMoney(t.net_amount)}</td>
+                    <td className="num">
+                      <button className="link-danger" onClick={() => void remove(t.id)}>
+                        delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="text-dim">
+                      No slips yet — money in or out, start with today&apos;s. The assistant can tag it for you if you have
+                      no idea where it fits.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

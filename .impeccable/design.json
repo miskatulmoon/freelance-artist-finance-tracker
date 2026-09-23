@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-23T00:00:00Z",
+  "title": "Design System: StudioLedger",
+  "extensions": {
+    "colorMeta": {
+      "accent": { "role": "primary", "displayName": "Vermilion Red", "canonical": "#b03a24", "tonalRamp": ["#331d19", "#5f2e25", "#913b2b", "#c9452c", "#d36d5a", "#d79a8e", "#e2c6c0", "#f5f0ef"] },
+      "accent-hover": { "role": "primary", "displayName": "Vermilion Deep", "canonical": "#98311e", "tonalRamp": ["#331d19", "#602e25", "#923b2b", "#ca432b", "#d46c59", "#d7998e", "#e2c5c0", "#f5f0ef"] },
+      "accent-soft": { "role": "primary", "displayName": "Vermilion Wash", "canonical": "rgba(176, 58, 36, 0.12)", "tonalRamp": [] },
+      "paper": { "role": "neutral", "displayName": "Ivory Paper", "canonical": "#f6efe0", "tonalRamp": ["#312a1c", "#5b4b2a", "#896e34", "#bc9239", "#c9a964", "#d1be94", "#dfd6c3", "#f5f3f0"] },
+      "paper-vivid": { "role": "neutral", "displayName": "Vivid Paper", "canonical": "#fdf8ee", "tonalRamp": ["#362b17", "#654e20", "#9b7321", "#d89a1c", "#dfae4e", "#dec187", "#e5d8bd", "#f6f3ef"] },
+      "paper-inset": { "role": "neutral", "displayName": "Inset Paper", "canonical": "#eee4cf", "tonalRamp": ["#302a1d", "#574a2d", "#836b3a", "#b38f42", "#c2a66b", "#cdbc98", "#ddd5c5", "#f4f3f0"] },
+      "ink": { "role": "neutral", "displayName": "Ink Brown", "canonical": "#2b241d", "tonalRamp": ["#2a2622", "#4b423a", "#6d5e4f", "#927a63", "#a89685", "#bdb2a8", "#d6d1cc", "#f3f2f1"] },
+      "ink-soft": { "role": "neutral", "displayName": "Soft Ink", "canonical": "#5a4f41", "tonalRamp": ["#292723", "#49433b", "#6b6052", "#8e7d67", "#a59888", "#bbb4aa", "#d5d2cd", "#f3f2f1"] },
+      "graphite": { "role": "neutral", "displayName": "Graphite", "canonical": "#6f6350", "tonalRamp": ["#292723", "#49443b", "#6b6152", "#8e7f67", "#a59a88", "#bbb5aa", "#d5d2cd", "#f3f2f1"] },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "#e2d7bf", "tonalRamp": ["#2e291f", "#534832", "#7b6941", "#a78b4e", "#b9a374", "#c7ba9e", "#dbd5c8", "#f4f3f0"] },
+      "rule": { "role": "neutral", "displayName": "Ledger Rule", "canonical": "#d7caac", "tonalRamp": ["#2d291f", "#524833", "#796943", "#a48b51", "#b6a377", "#c6ba9f", "#dad5c8", "#f4f3f1"] },
+      "pig-commission": { "role": "secondary", "displayName": "Commission Violet", "canonical": "#5b52c4", "tonalRamp": ["#1e1d30", "#302d58", "#3e3884", "#4940b5", "#716ac3", "#9c97ce", "#c7c5de", "#f0f0f5"] },
+      "pig-etsy": { "role": "secondary", "displayName": "Etsy Ochre", "canonical": "#bd8a2e", "tonalRamp": ["#322a1a", "#5d4a28", "#8d6c2f", "#c38f32", "#cea65f", "#d4bc91", "#e1d6c2", "#f5f3ef"] },
+      "pig-patreon": { "role": "secondary", "displayName": "Patreon Rose", "canonical": "#c75d8a", "tonalRamp": ["#301d25", "#582d3f", "#843959", "#b44172", "#c36a90", "#cd98ae", "#ddc5cf", "#f5f0f2"] },
+      "pig-other": { "role": "secondary", "displayName": "Other Income Teal", "canonical": "#2f7d6f", "tonalRamp": ["#1d2f2c", "#2e564f", "#3b8175", "#44b09d", "#6dc0b1", "#9acbc3", "#c6ddd8", "#f0f4f4"] },
+      "pig-income": { "role": "tertiary", "displayName": "Income Umber", "canonical": "#9a6720", "tonalRamp": ["#332819", "#5f4725", "#91672c", "#c8872c", "#d2a05b", "#d7b88e", "#e2d4c0", "#f5f3ef"] },
+      "pig-spend": { "role": "tertiary", "displayName": "Spending Blue-Teal", "canonical": "#50708e", "tonalRamp": ["#21262c", "#36434f", "#495f74", "#597b9c", "#7d97b0", "#a3b3c2", "#cad1d8", "#f1f2f4"] },
+      "tone-commission": { "role": "secondary", "displayName": "Commission Ink", "canonical": "#49409f", "tonalRamp": [] },
+      "tone-etsy": { "role": "secondary", "displayName": "Etsy Ink", "canonical": "#896428", "tonalRamp": [] },
+      "tone-patreon": { "role": "secondary", "displayName": "Patreon Ink", "canonical": "#a74774", "tonalRamp": [] },
+      "tone-other": { "role": "secondary", "displayName": "Other Income Ink", "canonical": "#22665b", "tonalRamp": [] },
+      "tone-income": { "role": "tertiary", "displayName": "Income Ink", "canonical": "#7d5418", "tonalRamp": [] },
+      "tone-spend": { "role": "tertiary", "displayName": "Spending Ink", "canonical": "#3f5a78", "tonalRamp": [] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The wordmark in the header. At most one step above the largest figure." },
+      "headline": { "displayName": "Headline", "purpose": "Stat-card figures — always money, always Plex Mono with tabular numbers." },
+      "title": { "displayName": "Title", "purpose": "Card h3s and column heads; quiet uppercase graphite capsules." },
+      "body": { "displayName": "Body", "purpose": "Prose, notes, table cells. 65–75ch measure." },
+      "label": { "displayName": "Label", "purpose": "Form field labels." },
+      "hand": { "displayName": "Hand", "purpose": "Tagline, note heads, auto-tag stamp. The personal hand on the page." }
+    },
+    "shadows": [
+      { "name": "soft-paper-lift", "value": "0 1px 2px rgba(43, 36, 29, 0.07), 0 8px 20px rgba(43, 36, 29, 0.06)", "purpose": "Cards, notes, the brand mark, assistant bubbles. Low, warm, desk-like." },
+      { "name": "row-wash", "value": "rgba(122, 92, 46, 0.07)", "purpose": "Hover wash behind table rows." }
+    ],
+    "motion": [
+      { "name": "note-ink", "value": "opacity 0→1, translateY(5px)→0, blur(3px)→0, 0.32s cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "The single authored moment: the assistant note settles like ink onto paper." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "900px", "purpose": "Grids collapse to two columns; header wraps." },
+      { "name": "sm", "value": "560px", "purpose": "Grids collapse to one column; tables scroll inside .table-wrap." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one action on a card area; vermilion so it stays rare.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Add slip</button>",
+      "css": ".ds-btn-primary { appearance: none; border: 1px solid transparent; border-radius: var(--paper, 9px); padding: 8px 16px; font-family: var(--font-ui, 'Karla', sans-serif); font-size: 14px; font-weight: 700; background: var(--accent, #b03a24); color: #fff6ec; cursor: pointer; transition: background-color 0.15s, transform 0.06s; } .ds-btn-primary:hover { background: var(--accent-hover, #98311e); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: 2px solid var(--accent, #b03a24); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "The quiet alternative; paper surface so the primary keeps the room.",
+      "html": "<button class=\"ds-btn-ghost\" type=\"button\">Cancel</button>",
+      "css": ".ds-btn-ghost { appearance: none; border-radius: 9px; padding: 8px 16px; font-family: var(--font-ui, 'Karla', sans-serif); font-size: 14px; font-weight: 700; background: var(--paper-vivid, #fdf8ee); border: 1px solid var(--hairline, #e2d7bf); color: var(--ink-soft, #5a4f41); cursor: pointer; transition: border-color 0.15s, color 0.15s; } .ds-btn-ghost:hover { color: var(--ink, #2b241d); border-color: var(--rule, #d7caac); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--accent, #b03a24); outline-offset: 2px; } .ds-btn-ghost:disabled { opacity: 0.55; cursor: not-allowed; }"
+    },
+    {
+      "name": "Tab",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Pill navigation; the active tab tints vermilion, and Assistant sits last as the quietest entry.",
+      "html": "<nav class=\"ds-tabs\"><button class=\"ds-tab\" type=\"button\">Ledger</button><button class=\"ds-tab ds-tab-active\" type=\"button\">Slips</button><button class=\"ds-tab\" type=\"button\">Assistant</button></nav>",
+      "css": ".ds-tabs { display: flex; flex-wrap: wrap; gap: 8px; } .ds-tab { appearance: none; border: 1px solid var(--hairline, #e2d7bf); background: var(--paper-vivid, #fdf8ee); color: var(--ink-soft, #5a4f41); font-family: var(--font-ui, 'Karla', sans-serif); font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 999px; cursor: pointer; transition: border-color 0.15s, color 0.15s, background-color 0.15s; } .ds-tab:hover { color: var(--ink, #2b241d); border-color: var(--rule, #d7caac); } .ds-tab:focus-visible { outline: 2px solid var(--accent, #b03a24); outline-offset: 2px; } .ds-tab-active { background: var(--accent-soft, rgba(176, 58, 36, 0.12)); border-color: rgba(176, 58, 36, 0.4); color: var(--accent-hover, #98311e); }"
+    },
+    {
+      "name": "Pigment Chip",
+      "kind": "chip",
+      "refersTo": "pill",
+      "description": "Tints a money category or source from its tube color; ink-blocked text keeps 4.5:1 on paper.",
+      "html": "<span class=\"ds-pill ds-pill-source\">Commission · $2,400</span>",
+      "css": ".ds-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-family: var(--font-ui, 'Karla', sans-serif); font-size: 11.5px; font-weight: 600; border: 1px solid var(--hairline, #e2d7bf); color: var(--graphite, #6f6350); background: var(--paper-inset, #eee4cf); } .ds-pill-source { color: var(--tone-commission, #49409f); background: color-mix(in srgb, var(--pig-commission, #5b52c4) 12%, transparent); border-color: color-mix(in srgb, var(--pig-commission, #5b52c4) 34%, transparent); }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Vivid paper field; focus turns ink with a 3px vermilion-tinted ring and a vermilion caret.",
+      "html": "<label class=\"ds-field\">Description<input class=\"ds-input\" type=\"text\" placeholder=\"e.g. Pet portrait, 12×12\"></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 5px; font-family: var(--font-ui, 'Karla', sans-serif); font-size: 12px; color: var(--graphite, #6f6350); font-weight: 600; letter-spacing: 0.02em; } .ds-input { font: inherit; background: var(--paper-vivid, #fdf8ee); border: 1px solid var(--hairline, #e2d7bf); color: var(--ink, #2b241d); border-radius: 9px; padding: 8px 11px; outline: none; caret-color: var(--accent, #b03a24); transition: border-color 0.15s, box-shadow 0.15s; } .ds-input::placeholder { color: var(--graphite, #6f6350); } .ds-input:focus { border-color: var(--ink, #2b241d); box-shadow: 0 0 0 3px rgba(176, 58, 36, 0.14); }"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Vivid paper card; the figure is the headline — Plex Mono 27px, ink, leading over a graphite uppercase title.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Net, this month</h3><p class=\"ds-card-big\">+$1,280</p><p class=\"ds-card-hint\">money in minus money out</p></div>",
+      "css": ".ds-card { background: var(--paper-vivid, #fdf8ee); border: 1px solid var(--hairline, #e2d7bf); border-radius: 14px; padding: 18px; box-shadow: 0 1px 2px rgba(43, 36, 29, 0.07), 0 8px 20px rgba(43, 36, 29, 0.06); } .ds-card-title { margin: 0 0 2px; font-family: var(--font-ui, 'Karla', sans-serif); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--graphite, #6f6350); font-weight: 700; } .ds-card-big { margin: 0; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 27px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink, #2b241d); font-variant-numeric: tabular-nums; } .ds-card-hint { color: var(--graphite, #6f6350); font-size: 12.5px; margin: 5px 0 0; font-family: var(--font-ui, 'Karla', sans-serif); }"
+    },
+    {
+      "name": "Assistant Note",
+      "kind": "custom",
+      "refersTo": "note",
+      "description": "The AI's home is a note on the desk, revealed by the one authored motion moment.",
+      "html": "<section class=\"ds-note\"><h3 class=\"ds-note-head\">A note from your assistant</h3><p class=\"ds-note-copy\">You're 2 wells away from healthy this month.</p></section>",
+      "css": ".ds-note { background: var(--paper-vivid, #fdf8ee); border: 1px solid var(--hairline, #e2d7bf); border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(43, 36, 29, 0.07), 0 8px 20px rgba(43, 36, 29, 0.06); animation: ds-note-ink 0.32s cubic-bezier(0.16, 1, 0.3, 1); } @keyframes ds-note-ink { from { opacity: 0; transform: translateY(5px); filter: blur(3px); } to { opacity: 1; transform: none; filter: blur(0); } } .ds-note-head { margin: 0 0 2px; font-family: var(--font-hand, 'Caveat', cursive); font-size: 22px; font-weight: 600; color: var(--ink-soft, #5a4f41); line-height: 1.15; } .ds-note-copy { margin: 0; color: var(--ink-soft, #5a4f41); font-family: var(--font-ui, 'Karla', sans-serif); font-size: 13.5px; line-height: 1.55; }"
+    },
+    {
+      "name": "Auto-Tag Stamp",
+      "kind": "custom",
+      "refersTo": "stamp",
+      "description": "A hand-stamped 'auto' beside the slip: Caveat, teal ink, 1px border, pitched -1deg.",
+      "html": "<span class=\"ds-stamp\">auto</span>",
+      "css": ".ds-stamp { display: inline-flex; align-items: center; font-family: var(--font-hand, 'Caveat', cursive); font-size: 14px; font-weight: 600; color: var(--tone-other, #22665b); border: 1px solid color-mix(in srgb, var(--pig-other, #2f7d6f) 40%, transparent); background: color-mix(in srgb, var(--pig-other, #2f7d6f) 9%, transparent); padding: 1px 7px; border-radius: 5px; margin-left: 7px; transform: rotate(-1deg); vertical-align: 1px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Studio Paintbox",
+    "overview": "StudioLedger is the little ledger that lives on an artist's desk — a daylight-studio relic made of warm ivory paper, hand-inked annotations, and the tube colors of real pigments. Money is not a dashboard's abstraction here; it is something measured by hand, sources labeled in their own paint colors, running totals set in typewriter-style numerals on a ruled page. The whole screen is one long paper ground with painters' wash tints bleeding into the bars.\n\nThe voice is warm and candid, unhurried, and a little worn-in: a note from an assistant reads like a friend writing by hand, an auto-categorized slip carries a rubber-stamped \"auto\", and the tagline is script, not marketing type. Density is calm — one column of cards over a ~1120px measure, figures large enough to read across the room — and the interface never performs \"artiness\": it behaves like a ledger that happens to be painted. The AI does not headline anything; it is an assistant note beneath the charts and a quiet tab at the end of the row.\n\nThe composition gap from the previous AI-SaaS build is deliberate: no dark slate, no glow, no orbit-graph hero. StudioLedger is a light scene (daylight studio), and the palette carries that scene, never the category.",
+    "keyCharacteristics": [
+      "Warm ivory paper ground with a faint woven tooth; card surfaces one step vivid, inset panels one step shadowed.",
+      "Income sources as tube colors (commission violet, Etsy ochre, Patreon rose, other teal); income warm, spending cool.",
+      "All money in IBM Plex Mono with tabular numerals — numbers read as measurements, never as decoration.",
+      "Hand script (Caveat) reserved for the tagline, note heads, and the auto-tag stamp; prose is Karla.",
+      "One action colour (a vermilion red) per card; pigment tints belong to sources and statuses only.",
+      "Single authored motion moment: the assistant's note reveals like ink settling onto paper.",
+      "Ruled ledger edges (hairlines) instead of card borders stronger than the paper line."
+    ],
+    "rules": [
+      { "name": "The Tube Rule", "body": "A pigment belongs to a source, a status, or a sign — never to decoration. Tints are rendered as the pigment at 11–13% with a 34% border and an ink-blocked text tone (each ≥ 4.5:1 on paper). If a color is not a source, a status, or the one accent, it is not on the page.", "section": "colors" },
+      { "name": "The One-Action Rule", "body": "One filled button per card area. Vermilion marks the single thing you can do right now; everything else is ghost, link, or the paper itself.", "section": "colors" },
+      { "name": "The Ink-And-Sum Rule", "body": "If it is a number that means money, it is Plex Mono with tabular-nums. If it is a personal aside (tagline, note, stamp), it is Caveat. Everything else is Karla. A number rendered in Karla reads as prose; a note rendered in Karla loses the hand that wrote it.", "section": "typography" },
+      { "name": "The No-Costume Rule", "body": "No hard offset block shadows, no glow, no arbitrary blur pills. If an element needs to lift, it gets the soft shadow or a warmer paper — nothing that fights the desk scene.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do tint chips and bars from the source pigment (#5b52c4, #bd8a2e, #c75d8a, #2f7d6f) with a 12%-ish transparent fill, 34% border, and an ink-blocked text tone.",
+      "Do set every money amount in Plex Mono with tabular-nums at the right edge of its column.",
+      "Do write the tagline, note heads, and the auto stamp in Caveat; everything else in Karla.",
+      "Do reserve vermilion (#b03a24) for the one action on a card and the selection/focus signals.",
+      "Do keep a leader line — border-bottom: var(--rule) — under the header and the tabs to close each ruled band."
+    ],
+    "donts": [
+      "Don't darken the scene. The ground stays ivory paper (#f6efe0); no dark mode, no slate, no glow — the scene is a daylight studio.",
+      "Don't promote the assistant above the charts or past the last tab. AI is the quiet note and the end-of-row tab.",
+      "Don't use a system display face, gradient text, or emoji glyphs as icons; the mark is an authored SVG brushwork gesture.",
+      "Don't add kickers/eyebrows above headings, five-card icon rows, or hero-metric hero templates — the stat grid carries the story.",
+      "Don't set hard offset shadows (4px 4px 0) or zero-blur shadows; lift comes from the Soft Paper Lift token or tone.",
+      "Don't let a table, chart, or any surface push the page wider than the viewport — wrap tight, scroll wide."
+    ]
+  }
+}
