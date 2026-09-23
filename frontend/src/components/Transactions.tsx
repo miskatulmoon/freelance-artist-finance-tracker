@@ -202,7 +202,7 @@ export function Transactions() {
               <tbody>
                 {rows.map((t) => (
                   <tr key={t.id}>
-                    <td className="text-dim">{t.date}</td>
+                    <td className="mono datetime">{t.date}</td>
                     <td>
                       {t.description}
                       {t.merchant && <span className="text-dim"> · {t.merchant}</span>}
@@ -217,13 +217,11 @@ export function Transactions() {
                     </td>
                     <td>
                       <span className={`pill ${t.type === 'income' ? SOURCE_TONE[t.source ?? ''] ?? '' : CATEGORY_TONE[t.category ?? ''] ?? ''}`}>
-                        {t.type === 'income' ? t.source : t.category}
+                        {t.type === 'income' ? (t.source ?? '').replace('_', ' ') : (t.category ?? '').replace('_', ' ')}
                       </span>
                     </td>
-                    <td className={`num ${t.type === 'income' ? 'stat-positive' : 'stat-negative'}`}>
-                      {fmtMoney(t.amount)}
-                    </td>
-                    <td className="num text-dim">{fmtMoney(t.net_amount)}</td>
+                    <td className="num money">{fmtMoney(t.amount)}</td>
+                    <td className="num money text-dim">{fmtMoney(t.net_amount)}</td>
                     <td className="num">
                       <button className="link-danger" onClick={() => void remove(t.id)}>
                         delete

@@ -1,10 +1,18 @@
 import { BrandMark } from './BrandMark'
 
-const PIGMENTS = [
-  { label: 'commission', color: 'var(--pig-commission)' },
-  { label: 'etsy', color: 'var(--pig-etsy)' },
-  { label: 'patreon', color: 'var(--pig-patreon)' },
-  { label: 'other', color: 'var(--pig-other)' },
+const FEATURES = [
+  {
+    label: 'Commission tracker',
+    desc: 'Log clients, pieces, hours, and know your real hourly rate.',
+  },
+  {
+    label: 'Shop income',
+    desc: 'Etsy, Patreon, and every other source in one place.',
+  },
+  {
+    label: 'Cash-flow forecast',
+    desc: 'See the next 30 days before they surprise you.',
+  },
 ]
 
 export function Landing({ onEnter }: { onEnter: () => void }) {
@@ -12,7 +20,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
     <main className="landing">
       <div className="landing-core">
         <span className="landing-mark">
-          <BrandMark w={30} />
+          <BrandMark w={44} />
         </span>
         <h1>StudioLedger</h1>
         <div className="tagline">the little ledger for what your art makes</div>
@@ -22,12 +30,12 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
         <button className="btn landing-enter" onClick={onEnter}>
           Open your ledger
         </button>
-        <div className="landing-pigments" aria-hidden="true">
-          {PIGMENTS.map((p) => (
-            <span className="landing-pigment" key={p.label}>
-              <span className="pigment-dot" style={{ background: p.color }} />
-              {p.label}
-            </span>
+        <div className="landing-feats" aria-label="What StudioLedger does">
+          {FEATURES.map((f) => (
+            <div className="landing-feat" key={f.label}>
+              <div className="landing-feat-label">{f.label}</div>
+              <div className="landing-feat-desc">{f.desc}</div>
+            </div>
           ))}
         </div>
       </div>

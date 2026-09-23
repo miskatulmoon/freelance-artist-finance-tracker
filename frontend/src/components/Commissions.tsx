@@ -15,13 +15,6 @@ const EMPTY_FORM = {
 
 const STATUSES = ['agreed', 'in_progress', 'completed', 'cancelled']
 
-const STATUS_TONE: Record<string, string> = {
-  agreed: 'tone-commission',
-  in_progress: 'tone-etsy',
-  completed: 'tone-other',
-  cancelled: '',
-}
-
 export function Commissions() {
   const [rows, setRows] = useState<Commission[]>([])
   const [form, setForm] = useState({ ...EMPTY_FORM })
@@ -163,15 +156,15 @@ export function Commissions() {
               <tbody>
                 {rows.map((c) => (
                   <tr key={c.id}>
-                    <td>{c.client}</td>
+                    <td style={{ fontWeight: 500 }}>{c.client}</td>
                     <td className="text-dim">{c.piece}</td>
                     <td>
-                      <span className={`pill ${STATUS_TONE[c.status] ?? ''}`}>{c.status.replace('_', ' ')}</span>
+                      <span className={`badge badge-${c.status}`}>{c.status.replace('_', ' ')}</span>
                     </td>
                     <td className="num money">{c.amount !== null ? fmtMoney(c.amount) : '—'}</td>
-                    <td className="num text-dim">{c.hours_spent}</td>
-                    <td className="num">{c.effective_rate !== null ? fmtMoney(c.effective_rate) : '—'}</td>
-                    <td className="text-dim">{c.expected_date ?? '—'}</td>
+                    <td className="num mono-num text-dim">{c.hours_spent}</td>
+                    <td className="num mono-num">{c.effective_rate !== null ? fmtMoney(c.effective_rate) : '—'}</td>
+                    <td className="mono datetime">{c.expected_date ?? '—'}</td>
                     <td className="num">
                       <button className="link-danger" onClick={() => void remove(c.id)}>
                         delete
@@ -194,12 +187,12 @@ export function Commissions() {
       </div>
 
       {rows.some((c) => c.effective_rate !== null) && (
-        <div className="card" style={{ borderColor: 'var(--hairline)', borderStyle: 'dashed' }}>
-          <h2 className="note-head">Why this matters</h2>
-          <p className="text-dim" style={{ fontSize: 13.5, lineHeight: 1.6, margin: '6px 0 0' }}>
-            Your effective rate is paid income ÷ hours worked. If a <i>{fmtMoney(500)}</i> portrait took <b>20 h</b>,
-            that&apos;s <b>{fmtMoney(25)}/hr</b> — probably below minimum wage. Comparing pieces this way is the fastest
-            way to see which work is worth pricing higher.
+        <div className="why-note">
+          <h2 className="why-title">Why this matters</h2>
+          <p className="why-copy">
+            Your effective rate is paid income ÷ hours worked. If a <i>{fmtMoney(500)}</i> portrait took{' '}
+            <strong>20 h</strong>, that&apos;s <strong>{fmtMoney(25)}/hr</strong> — probably below minimum wage.
+            Comparing pieces this way is the fastest way to see which work is worth pricing higher.
           </p>
         </div>
       )}

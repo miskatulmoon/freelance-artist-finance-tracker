@@ -79,9 +79,13 @@ export function AssistantWidget() {
       {open && (
         <section className="a-panel" aria-label="Assistant">
           <header className="a-head">
-            <h2 className="note-head">A note from your assistant</h2>
+            <h2 className="a-title">
+              A note from
+              <br />
+              your assistant
+            </h2>
             <button type="button" className="a-min" aria-label="Minimize the assistant" onClick={toggle}>
-              –
+              −
             </button>
           </header>
 
