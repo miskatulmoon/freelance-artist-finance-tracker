@@ -4,6 +4,23 @@ import { api } from '../api'
 import type { Source, Transaction } from '../api'
 import { fmtMoney, todayISO } from '../format'
 
+const CURRENT_MONTH = todayISO().slice(0, 7)
+
+function monthKey(date: string): string {
+  return date.slice(0, 7)
+}
+
+function shiftMonth(month: string, amount: number): string {
+  const [year, monthNumber] = month.split('-').map(Number)
+  const shifted = new Date(year, monthNumber - 1 + amount, 1)
+  return `${shifted.getFullYear()}-${String(shifted.getMonth() + 1).padStart(2, '0')}`
+}
+
+function formatMonth(month: string): string {
+  const [year, monthNumber] = month.split('-').map(Number)
+  return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(year, monthNumber - 1, 1))
+}
+
 const SOURCES: { value: Source; label: string }[] = [
   { value: 'commission', label: 'Commission' },
   { value: 'etsy', label: 'Etsy / shop' },
@@ -47,6 +64,7 @@ const EMPTY_FORM = {
 
 export function Transactions() {
   const [rows, setRows] = useState<Transaction[]>([])
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null)
   const [form, setForm] = useState({ ...EMPTY_FORM })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -54,7 +72,9 @@ export function Transactions() {
 
   const load = async () => {
     try {
-      setRows(await api.listTransactions())
+      const nextRows = await api.listTransactions()
+      setRows(nextRows)
+      setSelectedMonth((current) => current ?? (nextRows[0] ? monthKey(nextRows[0].date) : CURRENT_MONTH))
       setError('')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load')
@@ -102,6 +122,12 @@ export function Transactions() {
       setError(err instanceof Error ? err.message : 'Failed to delete')
     }
   }
+
+  const activeMonth = selectedMonth ?? CURRENT_MONTH
+  const months = rows.map((row) => monthKey(row.date))
+  const earliestMonth = months.length > 0 ? months[months.length - 1] : activeMonth
+  const latestMonth = months.length > 0 ? months[0] : activeMonth
+  const visibleRows = rows.filter((row) => monthKey(row.date) === activeMonth)
 
   return (
     <div className="stack">
@@ -183,63 +209,90 @@ export function Transactions() {
       </form>
 
       <div className="card">
-        <h3>All slips</h3>
+        <div className="slips-heading">
+          <h3>Slips for {formatMonth(activeMonth)}</h3>
+          <span className="text-dim">{visibleRows.length} logged</span>
+        </div>
         {loading && <div className="loading">Loading…</div>}
         {!loading && (
-          <div className="table-wrap" style={{ marginTop: 8 }}>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Type</th>
-                  <th>Tag</th>
-                  <th className="num">Amount</th>
-                  <th className="num">Net</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((t) => (
-                  <tr key={t.id}>
-                    <td className="mono datetime">{t.date}</td>
-                    <td>
-                      {t.description}
-                      {t.merchant && <span className="text-dim"> · {t.merchant}</span>}
-                      {t.auto_categorized && (
-                        <span className="stamp" title="Tagged automatically from your description">
-                          auto
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <span className={`pill ${t.type}`}>{t.type}</span>
-                    </td>
-                    <td>
-                      <span className={`pill ${t.type === 'income' ? SOURCE_TONE[t.source ?? ''] ?? '' : CATEGORY_TONE[t.category ?? ''] ?? ''}`}>
-                        {t.type === 'income' ? (t.source ?? '').replace('_', ' ') : (t.category ?? '').replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="num money">{fmtMoney(t.amount)}</td>
-                    <td className="num money text-dim">{fmtMoney(t.net_amount)}</td>
-                    <td className="num">
-                      <button className="link-danger" onClick={() => void remove(t.id)}>
-                        delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {rows.length === 0 && (
+          <>
+            <div className="table-wrap" style={{ marginTop: 8 }}>
+              <table className="table">
+                <thead>
                   <tr>
-                    <td colSpan={7} className="text-dim">
-                      No slips yet — money in or out, start with today&apos;s. The assistant can tag it for you if you have
-                      no idea where it fits.
-                    </td>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>Tag</th>
+                    <th className="num">Amount</th>
+                    <th className="num">Net</th>
+                    <th></th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {visibleRows.map((t) => (
+                    <tr key={t.id}>
+                      <td className="mono datetime">{t.date}</td>
+                      <td>
+                        {t.description}
+                        {t.merchant && <span className="text-dim"> · {t.merchant}</span>}
+                        {t.auto_categorized && (
+                          <span className="stamp" title="Tagged automatically from your description">
+                            auto
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`pill ${t.type}`}>{t.type}</span>
+                      </td>
+                      <td>
+                        <span className={`pill ${t.type === 'income' ? SOURCE_TONE[t.source ?? ''] ?? '' : CATEGORY_TONE[t.category ?? ''] ?? ''}`}>
+                          {t.type === 'income' ? (t.source ?? '').replace('_', ' ') : (t.category ?? '').replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="num money">{fmtMoney(t.amount)}</td>
+                      <td className="num money text-dim">{fmtMoney(t.net_amount)}</td>
+                      <td className="num">
+                        <button className="link-danger" onClick={() => void remove(t.id)}>
+                          delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {visibleRows.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="text-dim">
+                        {rows.length === 0
+                          ? "No slips yet — money in or out, start with today's. The assistant can tag it for you if you have no idea where it fits."
+                          : `No slips logged in ${formatMonth(activeMonth)}.`}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="month-pager" aria-label="Slip months">
+              <button
+                type="button"
+                className="month-pager-button"
+                aria-label="View earlier month"
+                disabled={activeMonth <= earliestMonth}
+                onClick={() => setSelectedMonth(shiftMonth(activeMonth, -1))}
+              >
+                ← Earlier
+              </button>
+              <span className="mono month-pager-label">{formatMonth(activeMonth)}</span>
+              <button
+                type="button"
+                className="month-pager-button"
+                aria-label="View later month"
+                disabled={activeMonth >= latestMonth}
+                onClick={() => setSelectedMonth(shiftMonth(activeMonth, 1))}
+              >
+                Later →
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>

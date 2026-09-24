@@ -281,6 +281,74 @@ body::after {
   background: var(--paper);
 }
 
+.landing-art-stack {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(100vw, 1200px);
+  height: min(58vw, 560px);
+  transform: translate(-50%, -50%);
+}
+
+.landing-art {
+  position: absolute;
+  width: min(24vw, 300px);
+  aspect-ratio: 4 / 5;
+  border: 10px solid var(--paper-vivid);
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+}
+
+.landing-art-primary {
+  top: 0;
+  left: 0;
+  transform: rotate(-3deg);
+}
+
+.landing-art-secondary {
+  left: auto;
+  right: 0;
+  top: auto;
+  bottom: auto;
+  bottom: 0;
+  transform: rotate(4deg);
+}
+
+.landing-art-stack .landing-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(150deg, rgba(36, 30, 22, 0.04), rgba(168, 75, 47, 0.22));
+  mix-blend-mode: multiply;
+}
+
+.landing-art img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.landing-art span {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  z-index: 1;
+  color: var(--paper-vivid);
+  font-family: var(--font-hand);
+  font-size: 18px;
+  transform: rotate(-4deg);
+}
+
+.landing-art-secondary span {
+  transform: rotate(4deg);
+}
+
+.landing-art-stack + .landing-core {
+  position: relative;
+  z-index: 1;
+}
+
 .landing-core {
   max-width: 480px;
   width: 100%;
@@ -290,6 +358,41 @@ body::after {
   gap: 0;
   text-align: center;
   animation: note-ink 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dashboard-art {
+  position: relative;
+  height: 72px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-soft);
+}
+
+.dashboard-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(36, 30, 22, 0.6), rgba(36, 30, 22, 0.08));
+}
+
+.dashboard-art img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center 58%;
+}
+
+.dashboard-art span {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  z-index: 1;
+  color: var(--paper-vivid);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-style: italic;
+  transform: translateY(-50%);
 }
 
 .landing-mark {
@@ -411,9 +514,12 @@ body::after {
   right: 22px;
   bottom: 22px;
   z-index: 40;
-  width: 360px;
+  width: 400px;
+  height: min(620px, calc(100vh - 120px));
   max-width: calc(100vw - 32px);
-  max-height: min(520px, calc(100vh - 120px));
+  max-height: min(620px, calc(100vh - 120px));
+  min-width: 320px;
+  min-height: 420px;
   background: var(--paper-vivid);
   border: 1px solid var(--rule);
   border-radius: 8px;
@@ -421,6 +527,7 @@ body::after {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  resize: both;
   animation: note-ink 0.32s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -436,11 +543,11 @@ body::after {
 .a-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 19px;
   font-style: italic;
   font-weight: 300;
   color: var(--ink);
-  line-height: 1.3;
+  line-height: 1.45;
 }
 
 .a-min {
@@ -469,7 +576,7 @@ body::after {
   min-height: 0;
   max-height: none;
   flex: 1;
-  padding: 8px 14px;
+  padding: 16px 22px;
 }
 
 .a-error {
@@ -479,8 +586,8 @@ body::after {
 .a-foot {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px 14px 14px;
+  gap: 12px;
+  padding: 14px 16px 16px;
   border-top: 1px dashed var(--hairline);
 }
 
@@ -489,7 +596,7 @@ body::after {
 }
 
 .a-hint {
-  font-size: 10px;
+  font-size: 11px;
   font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -498,11 +605,11 @@ body::after {
 .a-suggestions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .a-foot .chat-input-row {
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .a-foot .chat-input-row button.btn {
@@ -534,6 +641,18 @@ body::after {
   .grid.cols-2 {
     grid-template-columns: 1fr 1fr;
   }
+
+  .landing-art-stack {
+    left: 50%;
+    width: calc(100vw - 40px);
+    height: min(52vw, 400px);
+    transform: translate(-50%, -50%);
+    opacity: 0.72;
+  }
+
+  .landing-art {
+    width: min(30vw, 280px);
+  }
 }
 
 @media (max-width: 560px) {
@@ -541,6 +660,10 @@ body::after {
   .grid.cols-3,
   .grid.cols-2 {
     grid-template-columns: 1fr;
+  }
+
+  .landing-art-stack {
+    display: none;
   }
 }
 
@@ -719,6 +842,13 @@ body::after {
 
 /* ----------------------------- tables (ruled ledger) ----------------------------- */
 
+.slips-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -778,6 +908,40 @@ body::after {
 
 .datetime {
   color: var(--ink-soft);
+}
+
+.month-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--hairline);
+}
+
+.month-pager-button {
+  border: 0;
+  padding: 4px 0;
+  color: var(--tone-commission);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.month-pager-button:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.month-pager-button:disabled {
+  color: var(--rule);
+  cursor: not-allowed;
+}
+
+.month-pager-label {
+  color: var(--graphite);
+  font-size: 11px;
+  letter-spacing: 0.04em;
 }
 
 .text-dim {
@@ -846,18 +1010,18 @@ body::after {
 .chat-log {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 25px;
   min-height: 120px;
   max-height: 280px;
   overflow-y: auto;
-  padding: 6px 2px;
+  padding: 8px 2px;
 }
 
 .chat-msg {
   max-width: 85%;
-  padding: 10px 14px;
-  font-size: 13px;
-  line-height: 1.5;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 .chat-msg.user {
@@ -874,6 +1038,7 @@ body::after {
   border: 1px solid var(--hairline);
   border-radius: 14px 14px 14px 4px;
   color: var(--ink-soft);
+  padding: 20px 20px;
 }
 
 .chat-input-row {
@@ -1177,5 +1342,7 @@ button.link-danger:hover {
     width: auto;
     max-width: none;
     max-height: calc(100vh - 96px);
+    min-width: 0;
+    resize: vertical;
   }
 }

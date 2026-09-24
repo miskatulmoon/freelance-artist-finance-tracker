@@ -3,6 +3,7 @@ import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 
 import { api } from '../api'
 import type { CashflowRadar, Summary } from '../api'
 import { fmtMonth, fmtMoney, statusClass } from '../format'
+import ledgerTexture from '../assets/wesley-tingey-XvlbhiTzfWA-unsplash.jpg'
 
 const SOURCE_COLORS: Record<string, string> = {
   commission: '#a84b2f',
@@ -163,6 +164,11 @@ export function Dashboard() {
             {radar.coverage_pct === null ? 'no spend history yet' : `${radar.coverage_pct}% 30-day coverage`}
           </div>
         </div>
+      </div>
+
+      <div className="dashboard-art" aria-hidden="true">
+        <img src={ledgerTexture} alt="" />
+        <span>your studio, in colour</span>
       </div>
 
       <div className="grid cols-2">

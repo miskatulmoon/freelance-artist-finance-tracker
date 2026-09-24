@@ -1,4 +1,6 @@
 import { BrandMark } from './BrandMark'
+import studioArtwork from '../assets/albert-klein-ZWWJ8fd8ayw-unsplash.jpg'
+import studioBrushes from '../assets/olga-deeva-Q0cWddzY--0-unsplash.jpg'
 
 const FEATURES = [
   {
@@ -18,6 +20,16 @@ const FEATURES = [
 export function Landing({ onEnter }: { onEnter: () => void }) {
   return (
     <main className="landing">
+      <div className="landing-art-stack" aria-hidden="true">
+        <div className="landing-art landing-art-primary">
+          <img src={studioBrushes} alt="" />
+          <span>made by hand, tracked with care</span>
+        </div>
+        <div className="landing-art landing-art-secondary">
+          <img src={studioArtwork} alt="" />
+          <span>colour, texture, rhythm</span>
+        </div>
+      </div>
       <div className="landing-core">
         <span className="landing-mark">
           <BrandMark w={44} />
