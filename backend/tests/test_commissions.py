@@ -26,6 +26,76 @@ def test_commission_unlinked_transaction_has_no_rate(client):
     assert r.json()["effective_rate"] is None
 
 
+def test_commission_rejects_missing_transaction_link(client):
+    response = client.post(
+        "/commissions",
+        json={"client": "mira", "piece": "sketch", "transaction_id": 999},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "transaction_id must reference an income transaction"
+
+
+def test_commission_rejects_expense_transaction_link(client, session):
+    from tests.conftest import make_tx
+
+    expense = make_tx("expense", 25.0, "paper", category="supplies")
+    session.add(expense)
+    session.commit()
+
+    response = client.post(
+        "/commissions",
+        json={"client": "mira", "piece": "sketch", "transaction_id": expense.id},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "transaction_id must reference an income transaction"
+
+
+def test_commission_rejects_duplicate_transaction_link(client, session):
+    from tests.conftest import make_tx
+
+    income = make_tx("income", 250.0, "portrait", source="commission")
+    session.add(income)
+    session.commit()
+
+    first = client.post(
+        "/commissions",
+        json={"client": "mira", "piece": "portrait", "transaction_id": income.id},
+    )
+    second = client.post(
+        "/commissions",
+        json={"client": "sol", "piece": "icons", "transaction_id": income.id},
+    )
+
+    assert first.status_code == 201
+    assert second.status_code == 422
+    assert second.json()["detail"] == "transaction_id is already linked to a commission"
+
+
+def test_commission_update_rejects_duplicate_transaction_link(client, session):
+    from tests.conftest import make_tx
+
+    first_income = make_tx("income", 250.0, "portrait", source="commission")
+    second_income = make_tx("income", 300.0, "icons", source="commission")
+    session.add_all([first_income, second_income])
+    session.commit()
+
+    first = client.post(
+        "/commissions",
+        json={"client": "mira", "piece": "portrait", "transaction_id": first_income.id},
+    ).json()
+    second = client.post(
+        "/commissions",
+        json={"client": "sol", "piece": "icons", "transaction_id": second_income.id},
+    ).json()
+
+    response = client.patch(f"/commissions/{second['id']}", json={"transaction_id": first["transaction_id"]})
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "transaction_id is already linked to a commission"
+
+
 def test_patch_commission_status(client):
     created = client.post("/commissions", json={"client": "mira", "piece": "sketch", "hours_spent": 5}).json()
     r = client.patch(f"/commissions/{created['id']}", json={"status": "completed", "hours_spent": 8})

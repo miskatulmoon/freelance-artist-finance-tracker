@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import Commission
+from app.models import Commission, Transaction
 from app.schemas import CommissionCreate, CommissionRead, CommissionUpdate
 from app.services.stats import net_amount
 
@@ -33,6 +33,21 @@ def _get_or_404(session: Session, commission_id: int) -> Commission:
     return c
 
 
+def _validate_transaction_link(session: Session, transaction_id: int | None, commission_id: int | None = None) -> None:
+    if transaction_id is None:
+        return
+
+    transaction = session.get(Transaction, transaction_id)
+    if transaction is None or transaction.type != "income":
+        raise HTTPException(status_code=422, detail="transaction_id must reference an income transaction")
+
+    query = select(Commission).where(Commission.transaction_id == transaction_id)
+    if commission_id is not None:
+        query = query.where(Commission.id != commission_id)
+    if session.exec(query).first() is not None:
+        raise HTTPException(status_code=422, detail="transaction_id is already linked to a commission")
+
+
 @router.get("", response_model=list[CommissionRead])
 def list_commissions(session: Session = Depends(get_session)):
     rows = session.exec(select(Commission).order_by(Commission.created_at.desc())).all()
@@ -41,6 +56,7 @@ def list_commissions(session: Session = Depends(get_session)):
 
 @router.post("", response_model=CommissionRead, status_code=201)
 def create_commission(payload: CommissionCreate, session: Session = Depends(get_session)):
+    _validate_transaction_link(session, payload.transaction_id)
     c = Commission(
         client=payload.client,
         piece=payload.piece,
@@ -62,6 +78,8 @@ def update_commission(commission_id: int, payload: CommissionUpdate, session: Se
     data = payload.model_dump(exclude_unset=True)
     if "status" in data and data["status"] is not None:
         data["status"] = data["status"].value
+    if "transaction_id" in data:
+        _validate_transaction_link(session, data["transaction_id"], commission_id=c.id)
     for key, value in data.items():
         setattr(c, key, value)
     session.add(c)
