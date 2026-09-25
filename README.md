@@ -1,5 +1,7 @@
 # StudioLedger — AI Finance for Freelance Artists
 
+[![CI](https://github.com/miskatulmoon/freelance-artist-finance-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/miskatulmoon/freelance-artist-finance-tracker/actions/workflows/ci.yml)
+
 A portfolio project: a full-stack finance coach for freelance artists who juggle **commissions, Etsy/Patreon sales, and content**. Log transactions and commissions; an LLM auto-categorizes entries, computes your **effective hourly rate**, flags cash-flow risk, and answers natural-language questions about your real numbers.
 
 **Stack:** FastAPI · SQLModel · SQLite · React (Vite) · Recharts · OpenAI-compatible LLM (NVIDIA endpoint)
@@ -62,6 +64,10 @@ Vite proxies `/api/*` to `localhost:8000`, so the two run together with zero con
 cd backend
 pytest                # 57 tests, offline (LLM mocked)
 ruff check . && ruff format --check .
+
+cd ../frontend
+npm test              # component tests
+npm run test:e2e      # Playwright smoke test
 ```
 
 ## Feature tour
