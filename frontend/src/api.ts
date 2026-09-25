@@ -67,6 +67,12 @@ export interface Summary {
   hourly_rate: number | null
 }
 
+export interface RadarPoint {
+  day: number
+  date: string
+  balance: number
+}
+
 export interface CashflowRadar {
   balance: number
   burn_per_day: number
@@ -76,6 +82,9 @@ export interface CashflowRadar {
   coverage_pct: number | null
   level: 'healthy' | 'moderate' | 'low' | 'unknown'
   as_of: string
+  projection: RadarPoint[]
+  runway_days: number | null
+  projected_zero_date: string | null
 }
 
 export const api = {

@@ -26,6 +26,9 @@ def test_cashflow_radar_endpoint(client, session):
         "coverage_pct",
         "level",
         "as_of",
+        "projection",
+        "runway_days",
+        "projected_zero_date",
     }
     assert body["level"] in {"healthy", "moderate", "low", "unknown"}
 

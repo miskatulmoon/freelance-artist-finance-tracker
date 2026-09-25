@@ -85,3 +85,49 @@ def test_cashflow_radar_low_when_burn_exceeds_resources(session):
     assert radar["coverage_pct"] < 100
     assert radar["level"] == "low"
     assert radar["projected_balance_30d"] < 0
+
+
+def test_cashflow_projection_tracks_balance_and_income_steps(session):
+    today = date.today()
+    session.add(make_tx("income", 1000.0, "comm", source="commission", tx_date=today))
+    session.add(make_tx("expense", 600.0, "paper", tx_date=today))
+    session.add(make_commission(amount=300.0, expected_date=today + timedelta(days=10), status="agreed"))
+    session.commit()
+    radar = cashflow_radar(session, today=today)
+    proj = radar["projection"]
+    assert len(proj) == 31
+    assert proj[0]["day"] == 0
+    assert proj[0]["balance"] == radar["balance"]  # 400.0
+    assert proj[30]["balance"] == radar["projected_balance_30d"]
+    # the committed income lands on day 10, lifting the line
+    assert proj[10]["balance"] == round(radar["balance"] + 300.0 - radar["burn_per_day"] * 10, 2)
+    assert proj[9]["balance"] == round(radar["balance"] - radar["burn_per_day"] * 9, 2)
+    assert proj[30]["date"] == (today + timedelta(days=30)).isoformat()
+    assert radar["runway_days"] is not None
+    assert radar["projected_zero_date"] is None  # still above water at 30d
+
+
+def test_cashflow_projection_zero_date_when_depleted(session):
+    today = date.today()
+    session.add(make_tx("income", 200.0, "comm", source="commission", tx_date=today))
+    session.add(make_tx("expense", 2000.0, "rent", tx_date=today))
+    session.commit()
+    radar = cashflow_radar(session, today=today)
+    assert radar["projected_balance_30d"] < 0
+    assert radar["projected_zero_date"] is not None
+    assert radar["projection"][0]["balance"] <= radar["projection"][0]["balance"]  # sanity
+    # the depletion date is the first day the cumulative line dips to zero or below
+    zero_idx = next(i for i, p in enumerate(radar["projection"]) if p["balance"] <= 0)
+    assert radar["projected_zero_date"] == radar["projection"][zero_idx]["date"]
+
+
+def test_cashflow_projections_are_null_without_spend(session):
+    session.add(make_tx("income", 500.0, "comm", source="commission", tx_date=date.today()))
+    session.commit()
+    radar = cashflow_radar(session)
+    assert radar["burn_per_day"] == 0
+    assert radar["runway_days"] is None
+    assert radar["coverage_pct"] is None
+    assert radar["projected_zero_date"] is None
+    # no burn means a flat line at the current balance
+    assert all(p["balance"] == radar["balance"] for p in radar["projection"])

@@ -91,6 +91,10 @@ def burn_rate(session: Session, days: int = 60) -> float:
 
 def committed_income_30d(session: Session, today: DateType | None = None) -> float:
     today = today or DateType.today()
+    return round(sum(c.amount for c in _committed_income_rows(session, today)), 2)
+
+
+def _committed_income_rows(session: Session, today: DateType) -> list[Commission]:
     horizon = today + timedelta(days=30)
     rows = session.exec(
         select(Commission).where(
@@ -99,11 +103,29 @@ def committed_income_30d(session: Session, today: DateType | None = None) -> flo
             Commission.transaction_id.is_(None),
         )
     ).all()
-    total = 0.0
-    for c in rows:
-        if c.expected_date and today <= c.expected_date <= horizon and c.amount:
-            total += c.amount
-    return round(total, 2)
+    return [c for c in rows if c.expected_date and today <= c.expected_date <= horizon and c.amount]
+
+
+def _projection_series(
+    balance_now: float,
+    burn_per_day: float,
+    committed_rows: list[Commission],
+    today: DateType,
+    days: int = 30,
+) -> list[dict]:
+    committed = [c for c in committed_rows if c.expected_date is not None]
+    points: list[dict] = []
+    for d in range(days + 1):
+        day_date = today + timedelta(days=d)
+        landed = sum(c.amount for c in committed if c.expected_date <= day_date)
+        points.append(
+            {
+                "day": d,
+                "date": day_date.isoformat(),
+                "balance": round(balance_now + landed - round(burn_per_day * d, 2), 2),
+            }
+        )
+    return points
 
 
 def cashflow_radar(session: Session, today: DateType | None = None) -> dict:
@@ -111,7 +133,8 @@ def cashflow_radar(session: Session, today: DateType | None = None) -> dict:
     balance_now = balance(session)
     burn_per_day = burn_rate(session)
     burn_30d = round(burn_per_day * 30, 2)
-    committed = committed_income_30d(session, today)
+    committed_rows = _committed_income_rows(session, today)
+    committed = round(sum(c.amount for c in committed_rows), 2)
     projected = round(balance_now + committed - burn_30d, 2)
     coverage = round((balance_now + committed) / burn_30d * 100, 1) if burn_30d > 0 else None
 
@@ -124,6 +147,11 @@ def cashflow_radar(session: Session, today: DateType | None = None) -> dict:
     else:
         level = "low"
 
+    runway_days = round((balance_now + committed) / burn_per_day, 1) if burn_per_day > 0 else None
+    projection = _projection_series(balance_now, burn_per_day, committed_rows, today)
+    zero_point = next((p for p in projection if p["balance"] <= 0), None)
+    projected_zero_date = zero_point["date"] if zero_point else None
+
     return {
         "balance": balance_now,
         "burn_per_day": burn_per_day,
@@ -133,6 +161,9 @@ def cashflow_radar(session: Session, today: DateType | None = None) -> dict:
         "coverage_pct": coverage,
         "level": level,
         "as_of": today.isoformat(),
+        "projection": projection,
+        "runway_days": runway_days,
+        "projected_zero_date": projected_zero_date,
     }
 
 

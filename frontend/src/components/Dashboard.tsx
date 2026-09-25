@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  Cell,
+  ReferenceDot,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { api } from '../api'
 import type { CashflowRadar, Summary } from '../api'
 import { fmtMonth, fmtMoney, statusClass } from '../format'
@@ -10,6 +22,13 @@ const SOURCE_COLORS: Record<string, string> = {
   etsy: '#a8833a',
   patreon: '#8a6070',
   other_income: '#546b57',
+}
+
+const LEVEL_COLORS: Record<CashflowRadar['level'], string> = {
+  healthy: '#546b57',
+  moderate: '#a8833a',
+  low: '#a84b2f',
+  unknown: '#6f6350',
 }
 
 const WASH = {
@@ -64,6 +83,19 @@ function LedgerLegend() {
   )
 }
 
+function HeroArrow() {
+  return (
+    <svg width="16" height="8" viewBox="0 0 16 8" aria-hidden="true">
+      <path d="M1 4h12.5M13.5 4l-3-3M13.5 4l-3 3" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function fmtDay(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 function useDashboard() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [radar, setRadar] = useState<CashflowRadar | null>(null)
@@ -92,10 +124,13 @@ function useDashboard() {
 function DashboardSkeleton() {
   return (
     <div className="stack">
-      <div className="grid cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="card" style={{ paddingInline: 0, overflow: 'hidden' }}>
+        <div className="sk-block" style={{ width: '100%', height: 210 }} />
+      </div>
+      <div className="grid cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
           <div className="card" key={i} style={{ paddingInline: 0, overflow: 'hidden' }}>
-            <div className="sk-block" style={{ width: '100%', height: 78 }} />
+            <div className="sk-block" style={{ width: '100%', height: 124 }} />
           </div>
         ))}
       </div>
@@ -107,7 +142,7 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="card" style={{ paddingInline: 0, overflow: 'hidden' }}>
-        <div className="sk-block" style={{ width: '100%', height: 120 }} />
+        <div className="sk-block" style={{ width: '100%', height: 110 }} />
       </div>
     </div>
   )
@@ -115,6 +150,7 @@ function DashboardSkeleton() {
 
 export function Dashboard() {
   const { summary, radar, loading, error } = useDashboard()
+  const [heroHover, setHeroHover] = useState(false)
 
   if (loading) return <DashboardSkeleton />
   if (error || !summary || !radar) return <div className="error">{error || 'No data'}</div>
@@ -127,14 +163,132 @@ export function Dashboard() {
 
   const top = sources.length ? sources.reduce((a, b) => (b.net > a.net ? b : a)) : null
 
+  const levelColor = LEVEL_COLORS[radar.level]
+  const vals = radar.projection.length ? radar.projection.map((p) => p.balance) : [0]
+  const min = Math.min(...vals)
+  const max = Math.max(...vals)
+  const spread = max - min
+  const pad = spread * 0.1 || Math.max(Math.abs(max), 1) * 0.1
+  const yDomain: [number, number] = spread <= 0.01 && min >= 0 ? [0, (max || 1) * 1.25] : [min - pad, max + pad]
+
+  const showChart = radar.balance !== 0 || radar.burn_next_30d > 0 || radar.committed_next_30d > 0
+
+  const fmtAxis = (v: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(v)
+
   return (
     <div className="stack">
-      <div className="grid cols-4">
-        <div className="card">
-          <h3>Net balance</h3>
-          <div className="big">{fmtMoney(summary.balance)}</div>
-          <div className="hint">all-time income − expenses</div>
+      <div className="card hero">
+        <div className="hero-copy">
+          <div className="hero-head">
+            <h3>Cash runway</h3>
+            <span className={statusClass(radar.level)}>{radar.level}</span>
+          </div>
+          <div
+            className="hero-big"
+            style={radar.projected_balance_30d < 0 ? { color: 'var(--tone-commission)' } : undefined}
+          >
+            {fmtMoney(radar.projected_balance_30d)}
+          </div>
+          <div className="hero-path">
+            <span className="hero-path-word">today</span>
+            <span className="hero-money">{fmtMoney(radar.balance)}</span>
+            <span className="hero-arrow">
+              <HeroArrow />
+            </span>
+            <span className="hero-path-word">+30 days</span>
+            <span className="hero-money">{fmtMoney(radar.projected_balance_30d)}</span>
+          </div>
+
+          <div className="hero-subfigs">
+            <div>
+              <div className="text-dim">Committed income</div>
+              <div className="hero-subfig-num">{fmtMoney(radar.committed_next_30d)}</div>
+            </div>
+            <div>
+              <div className="text-dim">Projected spend</div>
+              <div className="hero-subfig-num">
+                {fmtMoney(radar.burn_next_30d)}
+                {radar.burn_per_day > 0 && <span className="hero-subfig-mono"> {fmtMoney(radar.burn_per_day)}/day</span>}
+              </div>
+            </div>
+            <div>
+              <div className="text-dim">Days covered</div>
+              <div className="hero-subfig-mono-num">
+                {radar.runway_days !== null ? `~${Math.round(radar.runway_days)} days` : '—'}
+              </div>
+            </div>
+          </div>
+
+          <p className="hero-note">
+            {radar.level === 'unknown' && 'Add a few slips to unlock the forecast.'}
+            {radar.level === 'healthy' && 'Covered through the month.'}
+            {radar.level === 'moderate' && 'Tight, but covered month-end.'}
+            {radar.level === 'low' && (
+              <>
+                Projected to{' '}
+                <span className="hero-note-warn">{fmtMoney(radar.projected_balance_30d)}</span> in 30 days — line up
+                income before {radar.projected_zero_date ? fmtDay(radar.projected_zero_date) : 'the month is out'}.
+              </>
+            )}
+          </p>
         </div>
+
+        {showChart && (
+          <div
+            className="hero-chart"
+            onMouseEnter={() => setHeroHover(true)}
+            onMouseLeave={() => setHeroHover(false)}
+            onTouchStart={() => setHeroHover(true)}
+            onTouchEnd={() => setHeroHover(false)}
+          >
+            <ResponsiveContainer width="100%" height={150}>
+              <AreaChart data={radar.projection} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="run-wash" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={levelColor} stopOpacity={0.22} />
+                    <stop offset="100%" stopColor={levelColor} stopOpacity={0.04} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="day" type="number" domain={[0, 30]} hide />
+                <YAxis tick={MONO_TICK} tickFormatter={fmtAxis} axisLine={false} tickLine={false} width={44} domain={yDomain} />
+                <Tooltip
+                  active={heroHover}
+                  labelFormatter={(label, payload) => {
+                    const datum = (payload?.[0]?.payload ?? {}) as { date?: string }
+                    return datum.date ? fmtDay(datum.date) : String(label)
+                  }}
+                  formatter={(value) => [fmtMoney(Number(value)), 'Balance']}
+                  contentStyle={TOOLTIP_STYLE}
+                  labelStyle={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: '0.06em', color: '#6f6350' }}
+                  cursor={{ stroke: '#d4c9b8', strokeDasharray: '3 3', strokeWidth: 1 }}
+                />
+                {min < 0 && <ReferenceLine y={0} stroke="#d4c9b8" strokeDasharray="4 4" strokeWidth={1} />}
+                <Area type="monotone" dataKey="balance" stroke={levelColor} strokeWidth={1.5} fill="url(#run-wash)" />
+                <ReferenceDot x={0} y={vals[0]} r={3.5} fill="#241e16" stroke="#f6f2ec" strokeWidth={1.5} />
+                <ReferenceDot x={30} y={vals[vals.length - 1]} r={3.5} fill={levelColor} stroke="#f6f2ec" strokeWidth={1.5} />
+              </AreaChart>
+            </ResponsiveContainer>
+            <div className="hero-legend" aria-hidden="true">
+              <span className="hero-legend-item">
+                <i className="hero-legend-dot" style={{ background: '#241e16' }} />
+                today
+              </span>
+              <span className="hero-legend-item">
+                <i className="hero-legend-dot" style={{ background: levelColor }} />
+                in 30 days
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="grid cols-2">
         <div className="card">
           <h3>
             <span className="card-head-dot">
@@ -154,15 +308,6 @@ export function Dashboard() {
           </h3>
           <div className="big">{fmtMoney(summary.total_fees)}</div>
           <div className="hint">Etsy, payment processors</div>
-        </div>
-        <div className="card">
-          <h3>Cash-flow level</h3>
-          <div className="big">
-            <span className={statusClass(radar.level)}>{radar.level}</span>
-          </div>
-          <div className="hint">
-            {radar.coverage_pct === null ? 'no spend history yet' : `${radar.coverage_pct}% 30-day coverage`}
-          </div>
         </div>
       </div>
 
@@ -231,50 +376,19 @@ export function Dashboard() {
         </div>
       )}
 
-      <div className="grid cols-2">
-        <div className="card">
-          <h3>Cash-flow · next 30 days</h3>
-          <div className="grid cols-2" style={{ marginTop: 10, gap: 12 }}>
-            <div>
-              <div className="text-dim" style={{ fontSize: 11 }}>Committed income</div>
-              <div className="money" style={{ fontSize: 20 }}>{fmtMoney(radar.committed_next_30d)}</div>
+      <div className="card">
+        <h3>Top merchants</h3>
+        <div className="grid cols-3" style={{ marginTop: 10 }}>
+          {summary.top_merchants.map((m, i) => (
+            <div key={m.merchant} className="text-dim">
+              <span style={{ fontSize: 11 }}>
+                <span className="pigment-dot" style={{ background: 'var(--pig-other)', marginRight: 5 }} />
+                #{i + 1} {m.merchant}
+              </span>
+              <div className="money" style={{ color: 'var(--ink)', fontSize: 18 }}>{fmtMoney(m.total)}</div>
             </div>
-            <div>
-              <div className="text-dim" style={{ fontSize: 11 }}>Projected spend</div>
-              <div className="money" style={{ fontSize: 20 }}>{fmtMoney(radar.burn_next_30d)}</div>
-            </div>
-            <div>
-              <div className="text-dim" style={{ fontSize: 11 }}>Projected balance</div>
-              <div className="money" style={{ fontSize: 20 }}>{fmtMoney(radar.projected_balance_30d)}</div>
-            </div>
-            <div>
-              <div className="text-dim" style={{ fontSize: 11 }}>Burn rate</div>
-              <div className="money" style={{ fontSize: 20 }}>
-                {fmtMoney(radar.burn_per_day)}<span className="text-dim" style={{ fontSize: 12 }}>/day</span>
-              </div>
-            </div>
-          </div>
-          <div className="hint" style={{ marginTop: 14 }}>
-            {radar.coverage_pct === null
-              ? 'Add a few slips to unlock the forecast.'
-              : `Balance + committed income cover ${radar.coverage_pct}% of projected spend.`}
-          </div>
-        </div>
-
-        <div className="card">
-          <h3>Top merchants</h3>
-          <div className="grid cols-3" style={{ marginTop: 10 }}>
-            {summary.top_merchants.map((m, i) => (
-              <div key={m.merchant} className="text-dim">
-                <span style={{ fontSize: 11 }}>
-                  <span className="pigment-dot" style={{ background: 'var(--pig-other)', marginRight: 5 }} />
-                  #{i + 1} {m.merchant}
-                </span>
-                <div className="money" style={{ color: 'var(--ink)', fontSize: 18 }}>{fmtMoney(m.total)}</div>
-              </div>
-            ))}
-            {summary.top_merchants.length === 0 && <div className="text-dim">No expense data yet — your feed of receipts is still empty.</div>}
-          </div>
+          ))}
+          {summary.top_merchants.length === 0 && <div className="text-dim">No expense data yet — your feed of receipts is still empty.</div>}
         </div>
       </div>
     </div>
