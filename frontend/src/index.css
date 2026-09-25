@@ -43,7 +43,7 @@
   --accent-soft: rgba(168, 75, 47, 0.12);
 
   --font-ui: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /*--font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace;*/
   --font-hand: 'Caveat', 'Segoe Script', cursive;
   --font-display: 'Fraunces', Georgia, serif;
 
@@ -118,8 +118,11 @@ body::after {
   justify-content: center;
 }
 
-.brand-mark svg {
+.brand-mark img {
   display: block;
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
 }
 
 .tagline {
@@ -408,8 +411,11 @@ body::after {
   margin-bottom: 20px;
 }
 
-.landing-mark svg {
+.landing-mark img {
   display: block;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
 }
 
 .landing-core h1 {
@@ -597,7 +603,7 @@ body::after {
 
 .a-hint {
   font-size: 11px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -678,7 +684,7 @@ body::after {
 
 .card h3 {
   margin: 0 0 10px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 10px;
   font-weight: 500;
   text-transform: uppercase;
@@ -754,7 +760,7 @@ body::after {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 2px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 10px;
   font-weight: 500;
   text-transform: uppercase;
@@ -813,7 +819,7 @@ body::after {
   display: inline-block;
   padding: 3px 10px;
   border-radius: 20px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 10px;
   font-weight: 500;
   text-transform: none;
@@ -836,8 +842,44 @@ body::after {
 }
 
 .badge.badge-cancelled {
-  color: var(--ink-soft);
-  background: var(--paper-inset);
+  color: var(--tone-commission);
+  background: var(--wash-commission);
+}
+
+.status-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-control {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  padding: 3px 28px 3px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+
+.status-control:hover {
+  border-color: var(--rule);
+}
+
+.status-control:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.status-chevron {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--graphite);
 }
 
 /* ----------------------------- tables (ruled ledger) ----------------------------- */
@@ -896,12 +938,12 @@ body::after {
 }
 
 .table td.mono {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 11px;
 }
 
 .table td.mono-num {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
@@ -1091,7 +1133,7 @@ label.field {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1164,7 +1206,7 @@ button.link-danger {
   background: none;
   border: none;
   color: var(--accent);
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 11px;
   letter-spacing: 0.04em;
   cursor: pointer;
@@ -1277,7 +1319,7 @@ button.link-danger:hover {
   align-items: center;
   gap: 9px;
   margin-top: 12px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 11px;
   color: var(--graphite);
   letter-spacing: 0.04em;
@@ -1310,14 +1352,14 @@ button.link-danger:hover {
 }
 
 .hero-subfig-mono {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 10px;
   color: var(--graphite);
   letter-spacing: 0.06em;
 }
 
 .hero-subfig-mono-num {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 13px;
   color: var(--ink);
   margin-top: 4px;
@@ -1357,7 +1399,7 @@ button.link-danger:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 10px;
   color: var(--graphite);
   letter-spacing: 0.06em;

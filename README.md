@@ -60,14 +60,15 @@ Vite proxies `/api/*` to `localhost:8000`, so the two run together with zero con
 
 ```bash
 cd backend
-pytest                # 31 tests, offline (LLM mocked)
+pytest                # 57 tests, offline (LLM mocked)
 ruff check . && ruff format --check .
 ```
 
 ## Feature tour
 
 - **Auto-categorization** — adding a transaction without a source/category asks the LLM to tag it (badge shown in the table).
-- **Effective $/hr** — log hours per commission; the app divides paid income by hours. The dashboard surfaces your rate for pricing decisions.
+- **Commission tracker** — log the piece once with its agreed terms (client, price, hours, due date); those lock in. From there you only move its status, and the ledger follows: completing a piece writes its income slip automatically; reopening or cancelling retracts it. Expected / earned / lost income are tallied by status.
+- **Effective $/hr** — hours logged per commission; the app divides recorded income by hours, per piece and across the studio. The dashboard surfaces your rate for pricing decisions.
 - **Net vs. gross** — Etsy/PayPal `fee_amount` is subtracted, so "net" reflects what you actually keep.
 - **Cash-flow radar** — balance + committed (agreed/in-progress) commissions vs. your 30-day burn, with a healthy/moderate/low flag and an AI narrative.
 - **AI chat** — POST a question; the backend bundles the computed metrics and asks the LLM to answer strictly from those figures.
@@ -80,7 +81,9 @@ Interactive docs at `/docs`. Main routes:
 |---|---|---|
 | GET/POST | `/transactions` | List (filters: source, category, type, date range) / create (auto-categorizes) |
 | PATCH/DELETE | `/transactions/{id}` | Edit / delete |
-| GET/POST | `/commissions` | Log commission hours / list all |
+| GET/POST | `/commissions` | List (active work first) / log a commission with its agreed terms |
+| GET | `/commissions/summary` | Income by status: expected / earned / lost, plus counts |
+| PATCH/DELETE | `/commissions/{id}` | Update progress — status only; price, hours, and due date lock at logging / delete |
 | GET | `/dashboard/summary` | Balance, per-source net, trend, top merchants, fees, $/hr |
 | POST | `/dashboard/insights` | LLM narrative over the summary |
 | GET | `/cashflow/radar` | 30-day forecast metrics |

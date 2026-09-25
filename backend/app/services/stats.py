@@ -35,17 +35,36 @@ def per_source_net(session: Session) -> dict[str, float]:
 
 
 def monthly_trend(session: Session, months: int = 6) -> list[dict]:
-    cutoff = (DateType.today().replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(weeks=4 * (months - 1))
+    today = DateType.today()
+    month_keys: list[str] = []
     buckets: dict[str, dict] = {}
+    for delta in range(months - 1, -1, -1):
+        y = today.year
+        m = today.month - delta
+        while m <= 0:
+            m += 12
+            y -= 1
+        while m > 12:
+            m -= 12
+            y += 1
+        key = f"{y:04d}-{m:02d}"
+        month_keys.append(key)
+        buckets[key] = {"month": key, "income": 0.0, "expense": 0.0, "net": 0.0}
+
+    year, month = map(int, month_keys[0].split("-"))
+    cutoff = DateType(year, month, 1)
+
     for t in list(session.exec(select(Transaction).where(Transaction.date >= cutoff)).all()):
         key = t.date.strftime("%Y-%m")
-        bucket = buckets.setdefault(key, {"month": key, "income": 0.0, "expense": 0.0, "net": 0.0})
+        if key not in buckets:
+            continue
+        bucket = buckets[key]
         if t.type == "income":
             bucket["income"] = round(bucket["income"] + net_amount(t), 2)
         else:
             bucket["expense"] = round(bucket["expense"] + t.amount, 2)
         bucket["net"] = round(bucket["income"] - bucket["expense"], 2)
-    return [buckets[k] for k in sorted(buckets)]
+    return [buckets[k] for k in month_keys]
 
 
 def top_merchants(session: Session, limit: int = 5) -> list[dict]:
@@ -76,6 +95,35 @@ def hourly_rate(session: Session) -> float | None:
     if hours <= 0:
         return None
     return round(income / hours, 2)
+
+
+def commission_income_summary(session: Session) -> dict:
+    """Income by commission status: what's on the desk vs. earned vs. lost."""
+    earned = 0.0
+    expected = 0.0
+    lost = 0.0
+    counts = {s.value: 0 for s in CommissionStatus}
+    active = 0
+    for c in session.exec(select(Commission)).all():
+        if c.status not in counts:
+            continue
+        counts[c.status] += 1
+        if c.amount is None:
+            continue
+        if c.status == CommissionStatus.COMPLETED.value:
+            earned = round(earned + c.amount, 2)
+        elif c.status in (CommissionStatus.AGREED.value, CommissionStatus.IN_PROGRESS.value):
+            expected = round(expected + c.amount, 2)
+            active += 1
+        elif c.status == CommissionStatus.CANCELLED.value:
+            lost = round(lost + c.amount, 2)
+    return {
+        "expected_income": expected,
+        "earned_income": earned,
+        "lost_income": lost,
+        "counts": counts,
+        "active_count": active,
+    }
 
 
 def burn_rate(session: Session, days: int = 60) -> float:
@@ -175,5 +223,6 @@ def context_bundle(session: Session) -> dict:
         "top_merchants": top_merchants(session),
         "total_fees": total_fees(session),
         "hourly_rate": hourly_rate(session),
+        "commission_summary": commission_income_summary(session),
         "cashflow": cashflow_radar(session),
     }

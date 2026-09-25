@@ -1,5 +1,5 @@
-import { BrandMark } from './BrandMark'
 import { BrushIcon, LedgerIcon, SlipsIcon } from './icons'
+import sllogo from '../assets/sllogo.png'
 
 export type Section = 'ledger' | 'slips' | 'commissions'
 
@@ -12,7 +12,7 @@ const NAV: { id: Section; label: string; icon: React.ReactNode }[] = [
 const SUBTITLES: Record<Section, string> = {
   ledger: 'commissions · Etsy · Patreon',
   slips: 'income & expenses, one line apiece',
-  commissions: 'agreed work and what it is worth',
+  commissions: 'each piece, from agreed to paid',
 }
 
 const PIGMENTS: { label: string; color: string }[] = [
@@ -64,7 +64,7 @@ export function Sidebar({ section, onChange }: { section: Section; onChange: (s:
     <aside className="side">
       <header className="side-brand">
         <span className="brand-mark">
-          <BrandMark w={24} />
+          <img src={sllogo} alt="" />
         </span>
         <div>
           <h1>StudioLedger</h1>

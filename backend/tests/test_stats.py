@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from app.services.stats import (
     balance,
     cashflow_radar,
+    commission_income_summary,
     committed_income_30d,
     hourly_rate,
     net_amount,
@@ -74,6 +75,31 @@ def test_committed_income_counts_unpaid_commissions_in_window(session):
     session.add_all([in_window, too_far, paid])
     session.commit()
     assert committed_income_30d(session, today=today) == 300.0
+
+
+def test_commission_income_summary_groups_by_status(session):
+    session.add(make_commission(client_name="a", amount=100.0, status="agreed"))
+    session.add(make_commission(client_name="b", amount=50.0, status="in_progress"))
+    session.add(make_commission(client_name="c", amount=300.0, status="completed"))
+    session.add(make_commission(client_name="d", amount=80.0, status="cancelled"))
+    session.commit()
+
+    summary = commission_income_summary(session)
+    assert summary["expected_income"] == 150.0
+    assert summary["earned_income"] == 300.0
+    assert summary["lost_income"] == 80.0
+    assert summary["counts"] == {"agreed": 1, "in_progress": 1, "completed": 1, "cancelled": 1}
+    assert summary["active_count"] == 2
+
+
+def test_commission_income_summary_ignores_unpriced_commissions(session):
+    session.add(make_commission(client_name="a", amount=None, status="in_progress"))
+    session.commit()
+
+    summary = commission_income_summary(session)
+    assert summary["expected_income"] == 0.0
+    assert summary["counts"]["in_progress"] == 1
+    assert summary["active_count"] == 0
 
 
 def test_cashflow_radar_low_when_burn_exceeds_resources(session):

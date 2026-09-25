@@ -11,8 +11,8 @@ def test_dashboard_summary_shape(client, session):
     assert body["balance"] == 566.0
     assert body["per_source_net"] == {"commission": 500.0, "etsy": 96.0}
     assert body["total_fees"] == 4.0
-    assert len(body["monthly_trend"]) >= 1
-    assert body["monthly_trend"][0]["month"] >= body["monthly_trend"][-1]["month"]
+    assert len(body["monthly_trend"]) == 6
+    assert body["monthly_trend"][0]["month"] <= body["monthly_trend"][-1]["month"]
 
 
 def test_cashflow_radar_endpoint(client, session):

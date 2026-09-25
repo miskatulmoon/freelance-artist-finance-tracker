@@ -52,6 +52,7 @@ class Commission(SQLModel, table=True):
     expected_date: DateType | None = None
     status: str = CommissionStatus.IN_PROGRESS.value
     transaction_id: int | None = Field(default=None, foreign_key="transaction.id", unique=True)
+    income_autologged: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     transaction: Transaction | None = Relationship(back_populates="commissions")

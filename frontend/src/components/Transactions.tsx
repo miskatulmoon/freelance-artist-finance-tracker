@@ -225,7 +225,7 @@ export function Transactions() {
                     <th>Type</th>
                     <th>Tag</th>
                     <th className="num">Amount</th>
-                    <th className="num">Net</th>
+                    <th className="num">Net after fees</th>
                     <th></th>
                   </tr>
                 </thead>

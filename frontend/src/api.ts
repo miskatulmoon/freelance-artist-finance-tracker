@@ -36,7 +36,7 @@ export interface Transaction {
   id: number
   type: TxType
   amount: number
-  net_amount: number
+  net_amount: number | null
   description: string
   date: string
   fee_amount: number | null
@@ -55,7 +55,16 @@ export interface Commission {
   expected_date: string | null
   status: string
   transaction_id: number | null
+  income_autologged: boolean
   effective_rate: number | null
+}
+
+export interface CommissionSummary {
+  expected_income: number
+  earned_income: number
+  lost_income: number
+  counts: Record<string, number>
+  active_count: number
 }
 
 export interface Summary {
@@ -102,7 +111,10 @@ export const api = {
   deleteTransaction: (id: number) => request<void>(`/transactions/${id}`, { method: 'DELETE' }),
 
   listCommissions: () => request<Commission[]>('/commissions'),
+  getCommissionSummary: () => request<CommissionSummary>('/commissions/summary'),
   createCommission: (body: Record<string, unknown>) =>
     request<Commission>('/commissions', { method: 'POST', body: JSON.stringify(body) }),
+  updateCommissionStatus: (id: number, status: string) =>
+    request<Commission>(`/commissions/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   deleteCommission: (id: number) => request<void>(`/commissions/${id}`, { method: 'DELETE' }),
 }

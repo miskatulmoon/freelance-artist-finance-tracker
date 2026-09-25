@@ -26,10 +26,11 @@ The artist logs a commission when it is agreed (client, piece, price, hours), re
 
 - Log income/expenses with source or category; optional fee deduction yields net.
 - Auto-categorization: an entry left untagged asks the LLM to tag it (shown as a small badge).
+- Commission tracker: agreed terms (client, price, hours, due date) lock at logging; only progress updates afterwards. Completing a piece writes its income slip into the ledger automatically — reopening or cancelling retracts it — and expected / earned / lost income are tallied by status.
 - Commissions with hours → effective $/hr per piece and across the studio.
 - Cash-flow radar: committed income vs. 30-day burn, with healthy/moderate/low flag.
 - AI chat answers questions strictly from computed figures.
-- Single-user, no auth; SQLite; seeded demo dataset via `backend/seed.py`; 31 offline tests with a mocked LLM; Vite proxies `/api` to FastAPI on :8000.
+- Single-user, no auth; SQLite; seeded demo dataset via `backend/seed.py`; 57 offline tests with a mocked LLM; Vite proxies `/api` to FastAPI on :8000.
 - Frontend: React 19 + Vite + Recharts; backend: FastAPI + SQLModel.
 
 ## Brand Commitments

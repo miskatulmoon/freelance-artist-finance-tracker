@@ -2,6 +2,7 @@ from datetime import date, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
@@ -103,3 +104,30 @@ def make_commission(
         status=status,
         transaction_id=transaction_id,
     )
+
+
+@pytest.fixture
+def legacy_engine():
+    """An engine whose commission table predates the income_autologged column."""
+    legacy = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    with legacy.begin() as conn:
+        conn.execute(
+            text(
+                "CREATE TABLE commission ("
+                "id INTEGER PRIMARY KEY, client VARCHAR NOT NULL, piece VARCHAR NOT NULL, "
+                "hours_spent FLOAT NOT NULL, amount FLOAT, expected_date DATE, status VARCHAR NOT NULL, "
+                "transaction_id INTEGER, created_at TIMESTAMP)"
+            )
+        )
+        conn.execute(
+            text(
+                "INSERT INTO commission (id, client, piece, hours_spent, amount, status, created_at) "
+                "VALUES (1, 'old client', 'old piece', 5.0, 200.0, 'completed', '2026-01-01 00:00:00')"
+            )
+        )
+    yield legacy
+    legacy.dispose()

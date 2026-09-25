@@ -19,6 +19,7 @@ def test_create_expense_autocategorizes(client):
     body = r.json()
     assert body["category"] == "supplies"
     assert body["auto_categorized"] is True
+    assert body["net_amount"] is None
 
 
 def test_invalid_llm_categorization_falls_back():

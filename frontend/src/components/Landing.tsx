@@ -1,6 +1,6 @@
-import { BrandMark } from './BrandMark'
 import studioArtwork from '../assets/albert-klein-ZWWJ8fd8ayw-unsplash.jpg'
 import studioBrushes from '../assets/olga-deeva-Q0cWddzY--0-unsplash.jpg'
+import sllogo from '../assets/sllogo.png'
 
 const FEATURES = [
   {
@@ -32,7 +32,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
       </div>
       <div className="landing-core">
         <span className="landing-mark">
-          <BrandMark w={44} />
+          <img src={sllogo} alt="" />
         </span>
         <h1>StudioLedger</h1>
         <div className="tagline">the little ledger for what your art makes</div>

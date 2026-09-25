@@ -17,7 +17,7 @@ def _to_read(tx: Transaction) -> TransactionRead:
         id=tx.id,
         type=tx.type,
         amount=round(tx.amount, 2),
-        net_amount=net_amount(tx),
+        net_amount=None if tx.type == "expense" else net_amount(tx),
         description=tx.description,
         date=tx.date,
         fee_amount=tx.fee_amount,

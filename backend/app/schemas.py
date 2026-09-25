@@ -1,7 +1,7 @@
 from datetime import date as DateType
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import ConfigDict, model_validator
 from sqlmodel import Field, SQLModel
 
 from app.models import Category, CommissionStatus, Source
@@ -60,7 +60,7 @@ class TransactionRead(SQLModel):
     id: int
     type: str
     amount: float
-    net_amount: float
+    net_amount: float | None
     description: str
     date: DateType
     fee_amount: float | None
@@ -81,13 +81,14 @@ class CommissionCreate(SQLModel):
 
 
 class CommissionUpdate(SQLModel):
-    client: str | None = Field(default=None, min_length=1)
-    piece: str | None = Field(default=None, min_length=1)
-    hours_spent: float | None = Field(default=None, ge=0)
-    amount: float | None = Field(default=None, gt=0)
-    expected_date: DateType | None = None
-    status: CommissionStatus | None = None
-    transaction_id: int | None = None
+    """Terms (price, hours, expected date) lock when the commission is logged.
+
+    Only progress — the status — can be updated afterwards.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: CommissionStatus
 
 
 class CommissionRead(SQLModel):
@@ -99,7 +100,16 @@ class CommissionRead(SQLModel):
     expected_date: DateType | None
     status: str
     transaction_id: int | None
+    income_autologged: bool
     effective_rate: float | None
+
+
+class CommissionSummary(SQLModel):
+    expected_income: float
+    earned_income: float
+    lost_income: float
+    counts: dict[str, int]
+    active_count: int
 
 
 class ChatRequest(SQLModel):
