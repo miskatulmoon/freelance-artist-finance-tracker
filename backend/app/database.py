@@ -1,72 +1,48 @@
 from collections.abc import Generator
+from pathlib import Path
 
-from sqlalchemy import inspect, text
-from sqlmodel import Session, SQLModel, create_engine
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import inspect
+from sqlmodel import Session, create_engine
 
 from app.config import get_settings
 
 connect_args = {"check_same_thread": False} if "sqlite" in get_settings().database_url else {}
 engine = create_engine(get_settings().database_url, connect_args=connect_args)
 
-_COMMISSION_COLUMNS = {
-    "income_autologged": "ALTER TABLE commission ADD COLUMN income_autologged BOOLEAN NOT NULL DEFAULT 0",
-}
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+BASELINE_REVISION = "0001"
+HEAD_REVISION = "0002"
 
 
-def _migrate_commission_columns(target_engine) -> None:
-    """Additive column migrations for older ledgers (SQLite has no Alembic here)."""
-    inspector = inspect(target_engine)
-    if "commission" not in inspector.get_table_names():
-        return
-    existing = {column["name"] for column in inspector.get_columns("commission")}
-    with target_engine.begin() as conn:
-        for name, ddl in _COMMISSION_COLUMNS.items():
-            if name not in existing:
-                conn.execute(text(ddl))
+def _alembic_config() -> Config:
+    config = Config(str(BACKEND_DIR / "alembic.ini"))
+    config.set_main_option("script_location", str(BACKEND_DIR / "migrations"))
+    return config
 
 
-def _migrate_money_to_cents(target_engine) -> None:
-    """Convert legacy float dollar columns to integer cents.
+def run_migrations(target_engine) -> None:
+    """Bring a ledger (fresh or pre-Alembic) up to the latest schema.
 
-    Older ledgers stored money as float dollars in `amount` / `fee_amount`.
-    This adds the `_cents` columns, backfills them, and drops the old ones.
+    Databases created before Alembic have tables but no `alembic_version`:
+    those get the baseline stamped (so 0001 does not try to re-create the
+    tables) and are then upgraded, which modernizes the legacy float-dollar
+    columns. Fresh databases simply upgrade from the baseline.
     """
-    inspector = inspect(target_engine)
-    tables = set(inspector.get_table_names())
-    with target_engine.begin() as conn:
-        if "transaction" in tables:
-            existing = {column["name"] for column in inspector.get_columns("transaction")}
-            if "amount" in existing and "amount_cents" not in existing:
-                conn.execute(text('ALTER TABLE "transaction" ADD COLUMN amount_cents INTEGER'))
-                conn.execute(text('ALTER TABLE "transaction" ADD COLUMN fee_amount_cents INTEGER'))
-                conn.execute(text('UPDATE "transaction" SET amount_cents = CAST(ROUND(amount * 100) AS INTEGER)'))
-                conn.execute(
-                    text(
-                        'UPDATE "transaction" SET fee_amount_cents = CAST(ROUND(fee_amount * 100) AS INTEGER) '
-                        "WHERE fee_amount IS NOT NULL"
-                    )
-                )
-                conn.execute(text('ALTER TABLE "transaction" DROP COLUMN amount'))
-                conn.execute(text('ALTER TABLE "transaction" DROP COLUMN fee_amount'))
-        if "commission" in tables:
-            existing = {column["name"] for column in inspector.get_columns("commission")}
-            if "amount" in existing and "amount_cents" not in existing:
-                conn.execute(text("ALTER TABLE commission ADD COLUMN amount_cents INTEGER"))
-                conn.execute(
-                    text(
-                        "UPDATE commission SET amount_cents = CAST(ROUND(amount * 100) AS INTEGER) "
-                        "WHERE amount IS NOT NULL"
-                    )
-                )
-                conn.execute(text("ALTER TABLE commission DROP COLUMN amount"))
+    from app import models  # noqa: F401  (register tables on the metadata)
+
+    tables = set(inspect(target_engine).get_table_names())
+    config = _alembic_config()
+    with target_engine.connect() as conn:
+        config.attributes["connection"] = conn
+        if tables and "alembic_version" not in tables:
+            command.stamp(config, BASELINE_REVISION)
+        command.upgrade(config, HEAD_REVISION)
 
 
 def init_db() -> None:
-    from app import models  # noqa: F401  (register tables)
-
-    SQLModel.metadata.create_all(engine)
-    _migrate_commission_columns(engine)
-    _migrate_money_to_cents(engine)
+    run_migrations(engine)
 
 
 def get_session() -> Generator[Session, None, None]:

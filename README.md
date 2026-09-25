@@ -43,8 +43,10 @@ pip install -r requirements.txt
 
 cp .env.example .env   # add your LLM_API_KEY
 python seed.py         # optional: load the demo dataset
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload   # applies Alembic migrations on startup
 ```
+
+Schema changes are versioned with **Alembic** (`backend/migrations/`); `init_db()` stamps the baseline on pre-Alembic ledgers and upgrades to head on every startup. To run migrations manually: `alembic upgrade head` from `backend/`.
 
 Open the auto-generated API docs at <http://localhost:8000/docs>.
 
