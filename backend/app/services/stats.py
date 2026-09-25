@@ -3,15 +3,19 @@ from datetime import timedelta
 
 from sqlmodel import Session, select
 
-from app.models import Commission, CommissionStatus, Source, Transaction
+from app.models import Commission, CommissionStatus, Source, Transaction, cents_to_dollars
+
+
+def net_amount_cents(tx: Transaction) -> int:
+    return tx.amount_cents - (tx.fee_amount_cents or 0)
 
 
 def net_amount(tx: Transaction) -> float:
-    return round(tx.amount - (tx.fee_amount or 0.0), 2)
+    return cents_to_dollars(net_amount_cents(tx))
 
 
-def _sum(values: list[float | None]) -> float:
-    return round(sum(v or 0.0 for v in values), 2)
+def _sum_cents(values: list[int | None]) -> float:
+    return cents_to_dollars(sum(v or 0 for v in values))
 
 
 def income_rows(session: Session) -> list[Transaction]:
@@ -23,15 +27,17 @@ def expense_rows(session: Session) -> list[Transaction]:
 
 
 def balance(session: Session) -> float:
-    return round(sum(net_amount(t) for t in income_rows(session)) - sum(t.amount for t in expense_rows(session)), 2)
+    net_income = sum(net_amount_cents(t) for t in income_rows(session))
+    expenses = sum(t.amount_cents for t in expense_rows(session))
+    return cents_to_dollars(net_income - expenses)
 
 
 def per_source_net(session: Session) -> dict[str, float]:
-    totals: dict[str, float] = {}
+    totals: dict[str, int] = {}
     for t in income_rows(session):
         source = t.source or Source.OTHER_INCOME.value
-        totals[source] = round(totals.get(source, 0.0) + net_amount(t), 2)
-    return totals
+        totals[source] = totals.get(source, 0) + net_amount_cents(t)
+    return {source: cents_to_dollars(cents) for source, cents in totals.items()}
 
 
 def monthly_trend(session: Session, months: int = 6) -> list[dict]:
@@ -49,7 +55,7 @@ def monthly_trend(session: Session, months: int = 6) -> list[dict]:
             y += 1
         key = f"{y:04d}-{m:02d}"
         month_keys.append(key)
-        buckets[key] = {"month": key, "income": 0.0, "expense": 0.0, "net": 0.0}
+        buckets[key] = {"month": key, "income": 0, "expense": 0}
 
     year, month = map(int, month_keys[0].split("-"))
     cutoff = DateType(year, month, 1)
@@ -60,23 +66,33 @@ def monthly_trend(session: Session, months: int = 6) -> list[dict]:
             continue
         bucket = buckets[key]
         if t.type == "income":
-            bucket["income"] = round(bucket["income"] + net_amount(t), 2)
+            bucket["income"] += net_amount_cents(t)
         else:
-            bucket["expense"] = round(bucket["expense"] + t.amount, 2)
-        bucket["net"] = round(bucket["income"] - bucket["expense"], 2)
-    return [buckets[k] for k in month_keys]
+            bucket["expense"] += t.amount_cents
+    return [
+        {
+            "month": buckets[k]["month"],
+            "income": cents_to_dollars(buckets[k]["income"]),
+            "expense": cents_to_dollars(buckets[k]["expense"]),
+            "net": cents_to_dollars(buckets[k]["income"] - buckets[k]["expense"]),
+        }
+        for k in month_keys
+    ]
 
 
 def top_merchants(session: Session, limit: int = 5) -> list[dict]:
-    totals: dict[str, float] = {}
+    totals: dict[str, int] = {}
     for t in expense_rows(session):
         merchant = (t.merchant or "unknown").strip()
-        totals[merchant] = round(totals.get(merchant, 0.0) + t.amount, 2)
-    return [{"merchant": m, "total": totals[m]} for m in sorted(totals, key=lambda m: -totals[m])[:limit]]
+        totals[merchant] = totals.get(merchant, 0) + t.amount_cents
+    return [
+        {"merchant": m, "total": cents_to_dollars(totals[m])}
+        for m in sorted(totals, key=lambda m: -totals[m])[:limit]
+    ]
 
 
 def total_fees(session: Session) -> float:
-    return _sum(t.fee_amount for t in income_rows(session) if t.fee_amount)
+    return _sum_cents([t.fee_amount_cents for t in income_rows(session) if t.fee_amount_cents])
 
 
 def hourly_rate(session: Session) -> float | None:
@@ -85,42 +101,42 @@ def hourly_rate(session: Session) -> float | None:
             Commission.transaction_id.is_not(None), Commission.status != CommissionStatus.CANCELLED.value
         )
     ).all()
-    income = 0.0
+    income_cents = 0
     hours = 0.0
     for c in commissions:
         linked = c.transaction
         if linked and linked.type == "income":
-            income += net_amount(linked)
+            income_cents += net_amount_cents(linked)
             hours += c.hours_spent
     if hours <= 0:
         return None
-    return round(income / hours, 2)
+    return round(cents_to_dollars(income_cents) / hours, 2)
 
 
 def commission_income_summary(session: Session) -> dict:
     """Income by commission status: what's on the desk vs. earned vs. lost."""
-    earned = 0.0
-    expected = 0.0
-    lost = 0.0
+    earned = 0
+    expected = 0
+    lost = 0
     counts = {s.value: 0 for s in CommissionStatus}
     active = 0
     for c in session.exec(select(Commission)).all():
         if c.status not in counts:
             continue
         counts[c.status] += 1
-        if c.amount is None:
+        if c.amount_cents is None:
             continue
         if c.status == CommissionStatus.COMPLETED.value:
-            earned = round(earned + c.amount, 2)
+            earned += c.amount_cents
         elif c.status in (CommissionStatus.AGREED.value, CommissionStatus.IN_PROGRESS.value):
-            expected = round(expected + c.amount, 2)
+            expected += c.amount_cents
             active += 1
         elif c.status == CommissionStatus.CANCELLED.value:
-            lost = round(lost + c.amount, 2)
+            lost += c.amount_cents
     return {
-        "expected_income": expected,
-        "earned_income": earned,
-        "lost_income": lost,
+        "expected_income": cents_to_dollars(expected),
+        "earned_income": cents_to_dollars(earned),
+        "lost_income": cents_to_dollars(lost),
         "counts": counts,
         "active_count": active,
     }
@@ -128,18 +144,18 @@ def commission_income_summary(session: Session) -> dict:
 
 def burn_rate(session: Session, days: int = 60) -> float:
     cutoff = DateType.today() - timedelta(days=days)
-    spent = sum(
-        t.amount
+    spent_cents = sum(
+        t.amount_cents
         for t in session.exec(
             select(Transaction).where(Transaction.type == "expense", Transaction.date >= cutoff)
         ).all()
     )
-    return round(spent / days, 2)
+    return round(cents_to_dollars(spent_cents) / days, 2)
 
 
 def committed_income_30d(session: Session, today: DateType | None = None) -> float:
     today = today or DateType.today()
-    return round(sum(c.amount for c in _committed_income_rows(session, today)), 2)
+    return cents_to_dollars(sum(c.amount_cents for c in _committed_income_rows(session, today)))
 
 
 def _committed_income_rows(session: Session, today: DateType) -> list[Commission]:
@@ -151,12 +167,12 @@ def _committed_income_rows(session: Session, today: DateType) -> list[Commission
             Commission.transaction_id.is_(None),
         )
     ).all()
-    return [c for c in rows if c.expected_date and today <= c.expected_date <= horizon and c.amount]
+    return [c for c in rows if c.expected_date and today <= c.expected_date <= horizon and c.amount_cents]
 
 
 def _projection_series(
-    balance_now: float,
-    burn_per_day: float,
+    balance_now_cents: int,
+    burn_per_day_cents: float,
     committed_rows: list[Commission],
     today: DateType,
     days: int = 30,
@@ -165,12 +181,12 @@ def _projection_series(
     points: list[dict] = []
     for d in range(days + 1):
         day_date = today + timedelta(days=d)
-        landed = sum(c.amount for c in committed if c.expected_date <= day_date)
+        landed = sum(c.amount_cents for c in committed if c.expected_date <= day_date)
         points.append(
             {
                 "day": d,
                 "date": day_date.isoformat(),
-                "balance": round(balance_now + landed - round(burn_per_day * d, 2), 2),
+                "balance": cents_to_dollars(round(balance_now_cents + landed - burn_per_day_cents * d)),
             }
         )
     return points
@@ -178,13 +194,21 @@ def _projection_series(
 
 def cashflow_radar(session: Session, today: DateType | None = None) -> dict:
     today = today or DateType.today()
-    balance_now = balance(session)
-    burn_per_day = burn_rate(session)
-    burn_30d = round(burn_per_day * 30, 2)
+    balance_now_cents = sum(net_amount_cents(t) for t in income_rows(session)) - sum(
+        t.amount_cents for t in expense_rows(session)
+    )
+    burn_per_day_cents = burn_rate(session) * 100
+    burn_30d_cents = burn_per_day_cents * 30
     committed_rows = _committed_income_rows(session, today)
-    committed = round(sum(c.amount for c in committed_rows), 2)
-    projected = round(balance_now + committed - burn_30d, 2)
-    coverage = round((balance_now + committed) / burn_30d * 100, 1) if burn_30d > 0 else None
+    committed_cents = sum(c.amount_cents for c in committed_rows)
+    balance_now = cents_to_dollars(balance_now_cents)
+    burn_per_day = cents_to_dollars(round(burn_per_day_cents))
+    burn_30d = cents_to_dollars(round(burn_30d_cents))
+    committed = cents_to_dollars(committed_cents)
+    projected = cents_to_dollars(round(balance_now_cents + committed_cents - burn_30d_cents))
+    coverage = (
+        round((balance_now_cents + committed_cents) / burn_30d_cents * 100, 1) if burn_30d_cents > 0 else None
+    )
 
     if coverage is None:
         level = "unknown"
@@ -195,8 +219,10 @@ def cashflow_radar(session: Session, today: DateType | None = None) -> dict:
     else:
         level = "low"
 
-    runway_days = round((balance_now + committed) / burn_per_day, 1) if burn_per_day > 0 else None
-    projection = _projection_series(balance_now, burn_per_day, committed_rows, today)
+    runway_days = (
+        round((balance_now_cents + committed_cents) / burn_per_day_cents, 1) if burn_per_day_cents > 0 else None
+    )
+    projection = _projection_series(balance_now_cents, burn_per_day_cents, committed_rows, today)
     zero_point = next((p for p in projection if p["balance"] <= 0), None)
     projected_zero_date = zero_point["date"] if zero_point else None
 

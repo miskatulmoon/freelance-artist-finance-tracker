@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import Commission, CommissionStatus, Source, Transaction
 from app.schemas import CommissionCreate, CommissionRead, CommissionSummary, CommissionUpdate
-from app.services.stats import commission_income_summary, net_amount
+from app.services.stats import commission_income_summary
 
 router = APIRouter(prefix="/commissions", tags=["commissions"])
 
@@ -16,24 +16,6 @@ _STATUS_ORDER = {
     CommissionStatus.COMPLETED.value: 2,
     CommissionStatus.CANCELLED.value: 3,
 }
-
-
-def _to_read(c: Commission) -> CommissionRead:
-    rate = None
-    if c.transaction and c.transaction.type == "income" and c.hours_spent > 0:
-        rate = round(net_amount(c.transaction) / c.hours_spent, 2)
-    return CommissionRead(
-        id=c.id,
-        client=c.client,
-        piece=c.piece,
-        hours_spent=c.hours_spent,
-        amount=c.amount,
-        expected_date=c.expected_date,
-        status=c.status,
-        transaction_id=c.transaction_id,
-        income_autologged=bool(c.income_autologged),
-        effective_rate=rate,
-    )
 
 
 def _sort_key(c: Commission) -> tuple:
@@ -72,15 +54,15 @@ def _log_completion_income(session: Session, c: Commission) -> None:
     """
     if c.transaction_id is not None:
         return
-    if c.amount is None:
+    if c.amount_cents is None:
         raise HTTPException(status_code=422, detail="commission has no agreed price to record as income")
 
     tx = Transaction(
         type="income",
-        amount=c.amount,
+        amount_cents=c.amount_cents,
         description=f"commission: {c.piece} for {c.client}",
         date=DateType.today(),
-        fee_amount=None,
+        fee_amount_cents=None,
         source=Source.COMMISSION.value,
         category=None,
         merchant=None,
@@ -120,7 +102,7 @@ def _apply_status(session: Session, c: Commission, new_status: str) -> None:
 @router.get("", response_model=list[CommissionRead])
 def list_commissions(session: Session = Depends(get_session)):
     rows = session.exec(select(Commission)).all()
-    return [_to_read(c) for c in sorted(rows, key=_sort_key)]
+    return [CommissionRead.from_model(c) for c in sorted(rows, key=_sort_key)]
 
 
 @router.get("/summary", response_model=CommissionSummary)
@@ -135,7 +117,7 @@ def create_commission(payload: CommissionCreate, session: Session = Depends(get_
         client=payload.client,
         piece=payload.piece,
         hours_spent=payload.hours_spent,
-        amount=payload.amount,
+        amount_cents=payload.amount_cents,
         expected_date=payload.expected_date,
         status=payload.status.value,
         transaction_id=payload.transaction_id,
@@ -146,7 +128,7 @@ def create_commission(payload: CommissionCreate, session: Session = Depends(get_
         _log_completion_income(session, c)
     session.commit()
     session.refresh(c)
-    return _to_read(c)
+    return CommissionRead.from_model(c)
 
 
 @router.patch("/{commission_id}", response_model=CommissionRead)
@@ -156,7 +138,7 @@ def update_commission(commission_id: int, payload: CommissionUpdate, session: Se
     session.add(c)
     session.commit()
     session.refresh(c)
-    return _to_read(c)
+    return CommissionRead.from_model(c)
 
 
 @router.delete("/{commission_id}", status_code=204)

@@ -9,7 +9,7 @@ from datetime import timedelta
 from sqlmodel import Session, select
 
 from app.database import engine, init_db
-from app.models import Commission, Transaction
+from app.models import Commission, Transaction, dollars_to_cents
 
 TODAY = DateType.today()
 
@@ -73,10 +73,10 @@ def seed() -> None:
         for row in TRANSACTIONS:
             tx = Transaction(
                 type=row[0],
-                amount=row[1],
+                amount_cents=dollars_to_cents(row[1]),
                 description=row[2],
                 date=row[3],
-                fee_amount=row[4],
+                fee_amount_cents=None if row[4] is None else dollars_to_cents(row[4]),
                 source=row[5],
                 category=row[6],
                 merchant=row[7],
@@ -91,7 +91,7 @@ def seed() -> None:
                     client=client,
                     piece=piece,
                     hours_spent=hours,
-                    amount=amount,
+                    amount_cents=dollars_to_cents(amount),
                     expected_date=TODAY - timedelta(days=3),
                     status="completed",
                     transaction_id=tx_ids[tx_index],
@@ -104,7 +104,7 @@ def seed() -> None:
                     client=client,
                     piece=piece,
                     hours_spent=hours,
-                    amount=amount,
+                    amount_cents=dollars_to_cents(amount),
                     expected_date=TODAY + timedelta(days=delta_days),
                     status=status,
                 )

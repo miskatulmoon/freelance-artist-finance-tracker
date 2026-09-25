@@ -23,20 +23,33 @@ export function AssistantWidget() {
     if (open) logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
   }, [messages, open])
 
-  const appendAssistant = (text: string) => setMessages((m) => [...m, { role: 'assistant', text }])
+  const updateLastAssistant = (fn: (text: string) => string) =>
+    setMessages((m) => {
+      const next = [...m]
+      const last = next[next.length - 1]
+      if (last?.role !== 'assistant') return m
+      next[next.length - 1] = { ...last, text: fn(last.text) }
+      return next
+    })
+
+  const dropEmptyAssistant = () =>
+    setMessages((m) => {
+      const last = m[m.length - 1]
+      return last?.role === 'assistant' && last.text === '' ? m.slice(0, -1) : m
+    })
 
   const ask = async (question?: string) => {
     const q = (question ?? input).trim()
     if (!q || busy) return
     setBusy(true)
     setError('')
-    setMessages((m) => [...m, { role: 'user', text: q }])
+    setMessages((m) => [...m, { role: 'user', text: q }, { role: 'assistant', text: '' }])
     setInput('')
     try {
-      const res = await api.chat(q)
-      appendAssistant(res.answer)
+      await api.streamChat(q, (delta) => updateLastAssistant((t) => t + delta))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to get an answer')
+      dropEmptyAssistant()
     } finally {
       setBusy(false)
     }
@@ -46,12 +59,13 @@ export function AssistantWidget() {
     if (busy) return
     setBusy(true)
     setError('')
-    setMessages((m) => [...m, { role: 'user', text: 'Read me the state of the studio.' }])
+    setMessages((m) => [...m, { role: 'user', text: 'Read me the state of the studio.' }, { role: 'assistant', text: '' }])
     try {
       const [i, c] = await Promise.all([api.getInsights(), api.getRadarNarrative()])
-      appendAssistant(`${i.insights}\n\n${c.narrative}`)
+      updateLastAssistant(() => `${i.insights}\n\n${c.narrative}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't pencil the note")
+      dropEmptyAssistant()
     } finally {
       setBusy(false)
     }
@@ -91,11 +105,17 @@ export function AssistantWidget() {
 
           <div className="chat-log a-log" ref={logRef} role="log" aria-live="polite">
             {messages.map((m, i) => (
-              <div key={i} className={`chat-msg ${m.role}${m.role === 'assistant' ? ' note-reveal' : ''}`}>
+              <div
+                key={i}
+                className={`chat-msg ${m.role}${m.role === 'assistant' ? ' note-reveal' : ''}`}
+                aria-busy={busy && i === messages.length - 1 && m.role === 'assistant'}
+              >
                 {m.text}
               </div>
             ))}
-            {busy && <div className="chat-msg assistant loading">Penciling…</div>}
+            {busy && messages[messages.length - 1]?.role === 'assistant' && messages[messages.length - 1].text === '' && (
+              <div className="chat-msg assistant loading">Penciling…</div>
+            )}
           </div>
 
           {error && <p className="error a-error">{error}</p>}

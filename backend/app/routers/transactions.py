@@ -4,32 +4,20 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import Transaction
+from app.models import Transaction, cents_to_dollars
 from app.schemas import TransactionCreate, TransactionRead, TransactionUpdate, validate_transaction_fields
 from app.services.llm import LLMClient, get_llm
-from app.services.stats import net_amount
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
 
-def _to_read(tx: Transaction) -> TransactionRead:
-    return TransactionRead(
-        id=tx.id,
-        type=tx.type,
-        amount=round(tx.amount, 2),
-        net_amount=None if tx.type == "expense" else net_amount(tx),
-        description=tx.description,
-        date=tx.date,
-        fee_amount=tx.fee_amount,
-        source=tx.source,
-        category=tx.category,
-        merchant=tx.merchant,
-        auto_categorized=tx.auto_categorized,
-    )
-
-
 def _categorize(tx: Transaction, llm: LLMClient) -> None:
-    result = llm.categorize(type=tx.type, description=tx.description, merchant=tx.merchant or "", amount=tx.amount)
+    result = llm.categorize(
+        type=tx.type,
+        description=tx.description,
+        merchant=tx.merchant or "",
+        amount=cents_to_dollars(tx.amount_cents),
+    )
     if tx.type == "income" and "source" in result:
         tx.source = result["source"]
     elif tx.type == "expense" and "category" in result:
@@ -65,7 +53,7 @@ def list_transactions(
     if to_date:
         query = query.where(Transaction.date <= to_date)
     rows = session.exec(query.order_by(Transaction.date.desc(), Transaction.id.desc())).all()
-    return [_to_read(tx) for tx in rows]
+    return [TransactionRead.from_model(tx) for tx in rows]
 
 
 @router.post("", response_model=TransactionRead, status_code=201)
@@ -74,10 +62,10 @@ def create_transaction(
 ):
     tx = Transaction(
         type=payload.type,
-        amount=payload.amount,
+        amount_cents=payload.amount_cents,
         description=payload.description,
         date=payload.date,
-        fee_amount=payload.fee_amount,
+        fee_amount_cents=payload.fee_amount_cents,
         merchant=payload.merchant,
     )
     if payload.type == "income":
@@ -94,13 +82,13 @@ def create_transaction(
     session.add(tx)
     session.commit()
     session.refresh(tx)
-    return _to_read(tx)
+    return TransactionRead.from_model(tx)
 
 
 @router.patch("/{transaction_id}", response_model=TransactionRead)
 def update_transaction(transaction_id: int, payload: TransactionUpdate, session: Session = Depends(get_session)):
     tx = _get_or_404(session, transaction_id)
-    data = payload.model_dump(exclude_unset=True)
+    data = payload.model_dump_cents()
     if "source" in data:
         data["source"] = data["source"].value if data["source"] else None
     if "category" in data:
@@ -108,8 +96,12 @@ def update_transaction(transaction_id: int, payload: TransactionUpdate, session:
     try:
         validate_transaction_fields(
             tx.type,
-            data.get("amount", tx.amount),
-            data.get("fee_amount", tx.fee_amount),
+            cents_to_dollars(data.get("amount_cents", tx.amount_cents)),
+            (
+                cents_to_dollars(fee)
+                if (fee := data.get("fee_amount_cents", tx.fee_amount_cents)) is not None
+                else None
+            ),
             data.get("source", tx.source),
             data.get("category", tx.category),
         )
@@ -120,7 +112,7 @@ def update_transaction(transaction_id: int, payload: TransactionUpdate, session:
     session.add(tx)
     session.commit()
     session.refresh(tx)
-    return _to_read(tx)
+    return TransactionRead.from_model(tx)
 
 
 @router.delete("/{transaction_id}", status_code=204)

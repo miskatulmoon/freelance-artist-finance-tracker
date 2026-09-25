@@ -1,13 +1,18 @@
 from datetime import date as DateType
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import ConfigDict, model_validator
 from sqlmodel import Field, SQLModel
 
-from app.models import Category, CommissionStatus, Source
+from app.models import Category, CommissionStatus, Source, cents_to_dollars, dollars_to_cents
+
+if TYPE_CHECKING:
+    from app.models import Commission, Transaction
 
 
 class TransactionCreate(SQLModel):
+    """API boundary: accepts dollars, exposes integer cents to the domain."""
+
     type: Literal["income", "expense"]
     amount: float = Field(gt=0)
     description: str = Field(min_length=1)
@@ -28,6 +33,14 @@ class TransactionCreate(SQLModel):
         )
         return self
 
+    @property
+    def amount_cents(self) -> int:
+        return dollars_to_cents(self.amount)
+
+    @property
+    def fee_amount_cents(self) -> int | None:
+        return None if self.fee_amount is None else dollars_to_cents(self.fee_amount)
+
 
 class TransactionUpdate(SQLModel):
     amount: float | None = Field(default=None, gt=0)
@@ -37,6 +50,16 @@ class TransactionUpdate(SQLModel):
     source: Source | None = None
     category: Category | None = None
     merchant: str | None = None
+
+    def model_dump_cents(self) -> dict:
+        """Dump set fields, converting dollar amounts to integer cents."""
+        data = self.model_dump(exclude_unset=True)
+        if "amount" in data:
+            data["amount_cents"] = dollars_to_cents(data.pop("amount"))
+        if "fee_amount" in data:
+            fee = data.pop("fee_amount")
+            data["fee_amount_cents"] = None if fee is None else dollars_to_cents(fee)
+        return data
 
 
 def validate_transaction_fields(
@@ -69,8 +92,28 @@ class TransactionRead(SQLModel):
     merchant: str | None
     auto_categorized: bool
 
+    @classmethod
+    def from_model(cls, tx: "Transaction") -> "TransactionRead":
+        """API boundary: convert stored integer cents back to dollars."""
+        net_cents = tx.amount_cents - (tx.fee_amount_cents or 0)
+        return cls(
+            id=tx.id,
+            type=tx.type,
+            amount=cents_to_dollars(tx.amount_cents),
+            net_amount=None if tx.type == "expense" else cents_to_dollars(net_cents),
+            description=tx.description,
+            date=tx.date,
+            fee_amount=None if tx.fee_amount_cents is None else cents_to_dollars(tx.fee_amount_cents),
+            source=tx.source,
+            category=tx.category,
+            merchant=tx.merchant,
+            auto_categorized=tx.auto_categorized,
+        )
+
 
 class CommissionCreate(SQLModel):
+    """API boundary: accepts dollars, exposes integer cents to the domain."""
+
     client: str = Field(min_length=1)
     piece: str = Field(min_length=1)
     hours_spent: float = Field(default=0, ge=0)
@@ -78,6 +121,10 @@ class CommissionCreate(SQLModel):
     expected_date: DateType | None = None
     status: CommissionStatus = CommissionStatus.IN_PROGRESS
     transaction_id: int | None = None
+
+    @property
+    def amount_cents(self) -> int | None:
+        return None if self.amount is None else dollars_to_cents(self.amount)
 
 
 class CommissionUpdate(SQLModel):
@@ -102,6 +149,27 @@ class CommissionRead(SQLModel):
     transaction_id: int | None
     income_autologged: bool
     effective_rate: float | None
+
+    @classmethod
+    def from_model(cls, c: "Commission") -> "CommissionRead":
+        """API boundary: convert stored integer cents back to dollars."""
+        rate = None
+        tx = c.transaction
+        if tx and tx.type == "income" and c.hours_spent > 0:
+            net_cents = tx.amount_cents - (tx.fee_amount_cents or 0)
+            rate = round(cents_to_dollars(net_cents) / c.hours_spent, 2)
+        return cls(
+            id=c.id,
+            client=c.client,
+            piece=c.piece,
+            hours_spent=c.hours_spent,
+            amount=None if c.amount_cents is None else cents_to_dollars(c.amount_cents),
+            expected_date=c.expected_date,
+            status=c.status,
+            transaction_id=c.transaction_id,
+            income_autologged=bool(c.income_autologged),
+            effective_rate=rate,
+        )
 
 
 class CommissionSummary(SQLModel):

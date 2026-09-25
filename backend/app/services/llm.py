@@ -1,5 +1,6 @@
 import json
 import re
+from collections.abc import Iterator
 from typing import ClassVar, Protocol
 
 from openai import OpenAI
@@ -16,6 +17,8 @@ class LLMClient(Protocol):
     def narrate_cashflow(self, radar: dict) -> str: ...
 
     def answer_question(self, question: str, bundle: dict) -> str: ...
+
+    def stream_answer_question(self, question: str, bundle: dict) -> Iterator[str]: ...
 
 
 def _extract_json(text: str) -> dict:
@@ -89,12 +92,34 @@ class OpenAIClient:
         )
         return self._complete(system, f"Cash-flow radar as JSON:\n{json.dumps(radar)}")
 
-    def answer_question(self, question: str, bundle: dict) -> str:
+    def _answer_prompt(self, question: str, bundle: dict) -> tuple[str, str]:
         system = (
             "Answer the user's question about their personal finances using ONLY the provided figures. "
             "Be concise, cite exact numbers, and never invent data. If the data can't answer it, say so."
         )
-        return self._complete(system, f"User question: {question}\n\nCurrent data (JSON):\n{json.dumps(bundle)}")
+        return system, f"User question: {question}\n\nCurrent data (JSON):\n{json.dumps(bundle)}"
+
+    def answer_question(self, question: str, bundle: dict) -> str:
+        system, user = self._answer_prompt(question, bundle)
+        return self._complete(system, user)
+
+    def stream_answer_question(self, question: str, bundle: dict) -> Iterator[str]:
+        system, user = self._answer_prompt(question, bundle)
+        stream = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            temperature=0.2,
+            max_tokens=500,
+            stream=True,
+        )
+        for chunk in stream:
+            if chunk.choices:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
 
 
 class HeuristicFallback:
@@ -219,6 +244,12 @@ class HeuristicFallback:
             return f"Your biggest merchant is {top['merchant']} at ${top['total']:.2f}."
         return "I don't have a template for that offline. Configure an LLM key for full natural-language answers."
 
+    def stream_answer_question(self, question: str, bundle: dict) -> Iterator[str]:
+        text = self.answer_question(question, bundle)
+        words = text.split(" ")
+        for i, word in enumerate(words):
+            yield word + (" " if i < len(words) - 1 else "")
+
 
 def get_llm() -> "FallbackClient":
     from app.config import get_settings
@@ -264,3 +295,19 @@ class FallbackClient:
             return self.primary.answer_question(question, bundle)
         except Exception:
             return self.fallback.answer_question(question, bundle)
+
+    def stream_answer_question(self, question: str, bundle: dict) -> Iterator[str]:
+        try:
+            stream = self.primary.stream_answer_question(question, bundle)
+            first = next(stream, None)
+        except Exception:
+            yield from self.fallback.stream_answer_question(question, bundle)
+            return
+        if first is None:
+            yield from self.fallback.stream_answer_question(question, bundle)
+            return
+        yield first
+        try:
+            yield from stream
+        except Exception:
+            return

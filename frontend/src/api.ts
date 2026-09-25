@@ -96,12 +96,54 @@ export interface CashflowRadar {
   projected_zero_date: string | null
 }
 
+export async function streamChat(question: string, onDelta: (text: string) => void): Promise<void> {
+  const res = await fetch(`${API_BASE}/chat/stream`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  })
+  if (!res.ok) {
+    let detail = res.statusText
+    try {
+      const body = await res.json()
+      detail = Array.isArray(body.detail) ? body.detail.map((d: { msg: string }) => d.msg).join(', ') : body.detail
+    } catch {
+      /* keep fallback */
+    }
+    throw new ApiError(res.status, detail)
+  }
+  const reader = res.body?.getReader()
+  if (!reader) throw new Error('Streaming is not supported in this browser')
+  const decoder = new TextDecoder()
+  let buffer = ''
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) return
+    buffer += decoder.decode(value, { stream: true })
+    const events = buffer.split('\n\n')
+    buffer = events.pop() ?? ''
+    for (const event of events) {
+      const line = event.trim()
+      if (!line.startsWith('data: ')) continue
+      const data = line.slice(6)
+      if (data === '[DONE]') return
+      try {
+        const payload = JSON.parse(data) as { delta?: string }
+        if (payload.delta) onDelta(payload.delta)
+      } catch {
+        /* ignore malformed chunk */
+      }
+    }
+  }
+}
+
 export const api = {
   getSummary: () => request<Summary>('/dashboard/summary'),
   getInsights: () => request<{ insights: string }>('/dashboard/insights', { method: 'POST' }),
   getRadar: () => request<CashflowRadar>('/cashflow/radar'),
   getRadarNarrative: () => request<{ radar: CashflowRadar; narrative: string }>('/cashflow/radar/insights', { method: 'POST' }),
   chat: (question: string) => request<{ answer: string }>('/chat', { method: 'POST', body: JSON.stringify({ question }) }),
+  streamChat,
 
   listTransactions: () => request<Transaction[]>('/transactions'),
   createTransaction: (body: Record<string, unknown>) =>

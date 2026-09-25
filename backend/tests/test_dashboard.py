@@ -1,3 +1,5 @@
+import json
+
 from tests.conftest import make_tx
 
 
@@ -56,3 +58,50 @@ def test_chat_uses_llm(client, session):
 
 def test_chat_rejects_empty_question(client):
     assert client.post("/chat", json={"question": ""}).status_code == 422
+
+
+def test_chat_stream_returns_sse_deltas(client, session):
+    session.add(make_tx("income", 500.0, "commission", source="commission"))
+    session.commit()
+    with client.stream("POST", "/chat/stream", json={"question": "how is my balance?"}) as r:
+        assert r.status_code == 200
+        assert r.headers["content-type"].startswith("text/event-stream")
+        body = "".join(chunk.decode() for chunk in r.iter_raw())
+    assert body.endswith("data: [DONE]\n\n")
+    deltas = [
+        json.loads(line[6:])["delta"]
+        for line in body.split("\n\n")
+        if line.startswith("data: ") and line != "data: [DONE]"
+    ]
+    assert "".join(deltas) == "FAKE_ANSWER q=how is my balance? balance=500.0"
+    assert len(deltas) > 1
+
+
+def test_chat_stream_degrades_to_fallback(client, session, monkeypatch):
+    from app.main import app
+    from app.services.llm import FallbackClient, HeuristicFallback, OpenAIClient, get_llm
+
+    def broken_stream(self, question: str, bundle: dict):
+        raise RuntimeError("provider down")
+        yield
+
+    monkeypatch.setattr(OpenAIClient, "stream_answer_question", broken_stream)
+    # Bypass the FakeLLM override: wrap a real OpenAIClient (whose stream is now
+    # broken) in FallbackClient so the endpoint must degrade to heuristics.
+    primary = OpenAIClient.__new__(OpenAIClient)
+    app.dependency_overrides[get_llm] = lambda: FallbackClient(primary)
+    session.add(make_tx("income", 500.0, "commission", source="commission"))
+    session.commit()
+    with client.stream("POST", "/chat/stream", json={"question": "what is my balance?"}) as r:
+        assert r.status_code == 200
+        body = "".join(chunk.decode() for chunk in r.iter_raw())
+    deltas = [
+        json.loads(line[6:])["delta"]
+        for line in body.split("\n\n")
+        if line.startswith("data: ") and line != "data: [DONE]"
+    ]
+    assert "".join(deltas) == HeuristicFallback().answer_question("what is my balance?", {"balance": 500.0})
+
+
+def test_chat_stream_rejects_empty_question(client):
+    assert client.post("/chat/stream", json={"question": ""}).status_code == 422

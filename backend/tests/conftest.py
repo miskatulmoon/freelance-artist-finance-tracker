@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from datetime import date, timedelta
 
 import pytest
@@ -27,6 +28,11 @@ class FakeLLM:
 
     def answer_question(self, question: str, bundle: dict) -> str:
         return f"FAKE_ANSWER q={question} balance={bundle['balance']}"
+
+    def stream_answer_question(self, question: str, bundle: dict) -> Iterator[str]:
+        text = self.answer_question(question, bundle)
+        for i in range(0, len(text), 6):
+            yield text[i : i + 6]
 
 
 @pytest.fixture
@@ -70,14 +76,14 @@ def make_tx(
     category: str | None = None,
     merchant: str | None = None,
 ):
-    from app.models import Transaction
+    from app.models import Transaction, dollars_to_cents
 
     return Transaction(
         type=type,
-        amount=amount,
+        amount_cents=dollars_to_cents(amount),
         description=description,
         date=tx_date or (date.today() - timedelta(days=1)),
-        fee_amount=fee,
+        fee_amount_cents=None if fee is None else dollars_to_cents(fee),
         source=source,
         category=category,
         merchant=merchant,
@@ -93,13 +99,13 @@ def make_commission(
     status: str = "agreed",
     transaction_id: int | None = None,
 ):
-    from app.models import Commission
+    from app.models import Commission, dollars_to_cents
 
     return Commission(
         client=client_name,
         piece=piece,
         hours_spent=hours,
-        amount=amount,
+        amount_cents=None if amount is None else dollars_to_cents(amount),
         expected_date=expected_date,
         status=status,
         transaction_id=transaction_id,

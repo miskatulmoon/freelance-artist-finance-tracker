@@ -1,4 +1,7 @@
+import json
+
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
 from app.database import get_session
@@ -49,3 +52,19 @@ def cashflow_insights(session: Session = Depends(get_session), llm: LLMClient = 
 @router.post("/chat")
 def chat(request: ChatRequest, session: Session = Depends(get_session), llm: LLMClient = Depends(get_llm)):
     return {"answer": llm.answer_question(request.question, context_bundle(session))}
+
+
+@router.post("/chat/stream")
+def chat_stream(request: ChatRequest, session: Session = Depends(get_session), llm: LLMClient = Depends(get_llm)):
+    bundle = context_bundle(session)
+
+    def event_stream():
+        for chunk in llm.stream_answer_question(request.question, bundle):
+            yield f"data: {json.dumps({'delta': chunk})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
