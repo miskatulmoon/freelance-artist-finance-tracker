@@ -62,7 +62,7 @@ Vite proxies `/api/*` to `localhost:8000`, so the two run together with zero con
 
 ```bash
 cd backend
-pytest                # 57 tests, offline (LLM mocked)
+pytest                # 63 tests, offline (LLM mocked)
 ruff check . && ruff format --check .
 
 cd ../frontend
