@@ -97,11 +97,7 @@ def update_transaction(transaction_id: int, payload: TransactionUpdate, session:
         validate_transaction_fields(
             tx.type,
             cents_to_dollars(data.get("amount_cents", tx.amount_cents)),
-            (
-                cents_to_dollars(fee)
-                if (fee := data.get("fee_amount_cents", tx.fee_amount_cents)) is not None
-                else None
-            ),
+            (cents_to_dollars(fee) if (fee := data.get("fee_amount_cents", tx.fee_amount_cents)) is not None else None),
             data.get("source", tx.source),
             data.get("category", tx.category),
         )
