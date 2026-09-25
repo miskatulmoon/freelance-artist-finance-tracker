@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/miskatulmoon/freelance-artist-finance-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/miskatulmoon/freelance-artist-finance-tracker/actions/workflows/ci.yml)
 
-A portfolio project: a full-stack finance coach for freelance artists who juggle **commissions, Etsy/Patreon sales, and content**. Log transactions and commissions; an LLM auto-categorizes entries, computes your **effective hourly rate**, flags cash-flow risk, and answers natural-language questions about your real numbers.
+A full-stack finance coach for freelance artists who juggle **commissions, Etsy/Patreon sales, and content**. Log transactions and commissions; an LLM auto-categorizes entries, computes your **effective hourly rate**, flags cash-flow risk, and answers natural-language questions about your real numbers.
 
 **Stack:** FastAPI · SQLModel · SQLite · React (Vite) · Recharts · OpenAI-compatible LLM (NVIDIA endpoint)
 
@@ -96,7 +96,7 @@ Interactive docs at `/docs`. Main routes:
 | POST | `/cashflow/radar/insights` | LLM cash-flow narrative |
 | POST | `/chat` | `{"question": "..."}` → computed answer |
 
-## "Next steps" (good interview material — deliberately not built)
+## "Next steps"
 
 - Multi-user auth (the roadmap one: sessions, per-user data)
 - Bank/Plaid sync instead of manual entry
