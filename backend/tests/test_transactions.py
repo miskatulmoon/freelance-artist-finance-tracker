@@ -22,7 +22,7 @@ def test_create_expense_autocategorizes(client):
     assert body["net_amount"] is None
 
 
-def test_invalid_llm_categorization_falls_back():
+def test_invalid_llm_categorization_falls_back(caplog):
     from app.services.llm import FallbackClient
 
     class InvalidLLM:
@@ -32,6 +32,9 @@ def test_invalid_llm_categorization_falls_back():
     result = FallbackClient(InvalidLLM()).categorize("income", "etsy print", "", 15)
 
     assert result == {"source": "etsy", "confidence": 0.6}
+    fallback_log = next(record for record in caplog.records if record.event == "llm_fallback")
+    assert fallback_log.operation == "categorize"
+    assert fallback_log.error_type == "ValueError"
 
 
 def test_create_income_with_explicit_source_skips_autocat(client):

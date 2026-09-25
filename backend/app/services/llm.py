@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from collections.abc import Iterator
 from typing import ClassVar, Protocol
@@ -7,6 +8,8 @@ from openai import OpenAI
 
 from app.config import Settings
 from app.models import Category, Source
+
+logger = logging.getLogger(__name__)
 
 
 class LLMClient(Protocol):
@@ -268,40 +271,58 @@ class FallbackClient:
         self.primary = primary
         self.fallback = HeuristicFallback()
 
+    def _log_fallback(self, operation: str, error: Exception | None = None, reason: str | None = None) -> None:
+        logger.warning(
+            "llm_fallback",
+            extra={
+                "event": "llm_fallback",
+                "operation": operation,
+                "error_type": type(error).__name__ if error else None,
+                "reason": reason,
+            },
+            exc_info=error is not None,
+        )
+
     def categorize(self, type: str, description: str, merchant: str, amount: float) -> dict:
         try:
             result = self.primary.categorize(type, description, merchant, amount)
             return _validate_categorization(type, result)
-        except Exception:
+        except Exception as error:
+            self._log_fallback("categorize", error)
             result = self.fallback.categorize(type, description, merchant, amount)
             return _validate_categorization(type, result)
 
     def narrate_insights(self, metrics: dict) -> str:
         try:
             return self.primary.narrate_insights(metrics)
-        except Exception:
+        except Exception as error:
+            self._log_fallback("narrate_insights", error)
             return self.fallback.narrate_insights(metrics)
 
     def narrate_cashflow(self, radar: dict) -> str:
         try:
             return self.primary.narrate_cashflow(radar)
-        except Exception:
+        except Exception as error:
+            self._log_fallback("narrate_cashflow", error)
             return self.fallback.narrate_cashflow(radar)
 
     def answer_question(self, question: str, bundle: dict) -> str:
         try:
             return self.primary.answer_question(question, bundle)
-        except Exception:
+        except Exception as error:
+            self._log_fallback("answer_question", error)
             return self.fallback.answer_question(question, bundle)
 
     def stream_answer_question(self, question: str, bundle: dict) -> Iterator[str]:
         try:
             stream = self.primary.stream_answer_question(question, bundle)
             first = next(stream, None)
-        except Exception:
+        except Exception as error:
+            self._log_fallback("stream_answer_question", error)
             yield from self.fallback.stream_answer_question(question, bundle)
             return
         if first is None:
+            self._log_fallback("stream_answer_question", reason="empty_response")
             yield from self.fallback.stream_answer_question(question, bundle)
             return
         yield first
