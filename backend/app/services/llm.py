@@ -46,9 +46,7 @@ def _validate_categorization(type: str, result: object) -> dict:
 
 class OpenAIClient:
     def __init__(self, settings: Settings):
-        self.client = OpenAI(
-            api_key=settings.llm_api_key, base_url=settings.llm_base_url, timeout=60.0, max_retries=0
-        )
+        self.client = OpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url, timeout=60.0, max_retries=0)
         self.model = settings.llm_model
 
     def _complete(self, system: str, user: str) -> str:

@@ -86,8 +86,7 @@ def top_merchants(session: Session, limit: int = 5) -> list[dict]:
         merchant = (t.merchant or "unknown").strip()
         totals[merchant] = totals.get(merchant, 0) + t.amount_cents
     return [
-        {"merchant": m, "total": cents_to_dollars(totals[m])}
-        for m in sorted(totals, key=lambda m: -totals[m])[:limit]
+        {"merchant": m, "total": cents_to_dollars(totals[m])} for m in sorted(totals, key=lambda m: -totals[m])[:limit]
     ]
 
 
@@ -206,9 +205,7 @@ def cashflow_radar(session: Session, today: DateType | None = None) -> dict:
     burn_30d = cents_to_dollars(round(burn_30d_cents))
     committed = cents_to_dollars(committed_cents)
     projected = cents_to_dollars(round(balance_now_cents + committed_cents - burn_30d_cents))
-    coverage = (
-        round((balance_now_cents + committed_cents) / burn_30d_cents * 100, 1) if burn_30d_cents > 0 else None
-    )
+    coverage = round((balance_now_cents + committed_cents) / burn_30d_cents * 100, 1) if burn_30d_cents > 0 else None
 
     if coverage is None:
         level = "unknown"

@@ -111,7 +111,8 @@ def seed() -> None:
             )
 
         session.commit()
-        print(f"Seeded {len(TRANSACTIONS)} transactions and {len(LINKED_COMMISSIONS) + len(PENDING_COMMISSIONS)} commissions.")  # noqa: E501
+        total_commissions = len(LINKED_COMMISSIONS) + len(PENDING_COMMISSIONS)
+        print(f"Seeded {len(TRANSACTIONS)} transactions and {total_commissions} commissions.")
 
 
 if __name__ == "__main__":
