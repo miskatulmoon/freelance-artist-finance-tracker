@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import type { Commission, CommissionSummary } from '../api'
+import type { Commission, CommissionCreate, CommissionStatus, CommissionSummary } from '../api'
 import { fmtMoney, todayISO } from '../format'
 
 const EMPTY_FORM = {
@@ -10,10 +10,10 @@ const EMPTY_FORM = {
   amount: '',
   hours: '',
   expected_date: todayISO(),
-  status: 'in_progress',
+  status: 'in_progress' as CommissionStatus,
 }
 
-const STATUSES = ['agreed', 'in_progress', 'completed', 'cancelled']
+const STATUSES: CommissionStatus[] = ['agreed', 'in_progress', 'completed', 'cancelled']
 
 const SUMMARY_HINTS = {
   expected: 'agreed or in progress',
@@ -55,7 +55,7 @@ export function Commissions() {
     e.preventDefault()
     setSubmitting(true)
     setError('')
-    const payload: Record<string, unknown> = {
+    const payload: CommissionCreate = {
       client: form.client,
       piece: form.piece,
       amount: Number(form.amount),
@@ -83,7 +83,7 @@ export function Commissions() {
     }
   }
 
-  const setStatus = async (id: number, status: string) => {
+  const setStatus = async (id: number, status: CommissionStatus) => {
     setError('')
     const prev = rows.find((r) => r.id === id)?.status
     setRows((rs) => rs.map((c) => (c.id === id ? { ...c, status } : c)))
@@ -227,7 +227,7 @@ export function Commissions() {
                         <select
                           className={`badge badge-${c.status} status-control`}
                           value={c.status}
-                          onChange={(e) => void setStatus(c.id, e.target.value)}
+                          onChange={(e) => void setStatus(c.id, e.target.value as CommissionStatus)}
                           aria-label={`Progress for ${c.client} — ${c.piece}`}
                         >
                           {STATUSES.map((s) => (

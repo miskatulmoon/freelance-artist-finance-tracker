@@ -28,73 +28,32 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export type Source = 'commission' | 'etsy' | 'patreon' | 'other_income'
-export type Category = 'supplies' | 'platform_fees' | 'subscriptions' | 'equipment' | 'other_expense'
-export type TxType = 'income' | 'expense'
+import type { components, operations } from './types/api'
 
-export interface Transaction {
-  id: number
-  type: TxType
-  amount: number
-  net_amount: number | null
-  description: string
-  date: string
-  fee_amount: number | null
-  source: Source | null
-  category: Category | null
-  merchant: string | null
-  auto_categorized: boolean
-}
+type Schemas = components['schemas']
+type OperationResponse<
+  Operation extends keyof operations,
+  Status extends keyof operations[Operation]['responses'],
+> = operations[Operation]['responses'][Status] extends { content: { 'application/json': infer Response } }
+  ? Response
+  : never
 
-export interface Commission {
-  id: number
-  client: string
-  piece: string
-  hours_spent: number
-  amount: number | null
-  expected_date: string | null
-  status: string
-  transaction_id: number | null
-  income_autologged: boolean
-  effective_rate: number | null
-}
-
-export interface CommissionSummary {
-  expected_income: number
-  earned_income: number
-  lost_income: number
-  counts: Record<string, number>
-  active_count: number
-}
-
-export interface Summary {
-  balance: number
-  per_source_net: Record<Source, number>
-  monthly_trend: { month: string; income: number; expense: number; net: number }[]
-  top_merchants: { merchant: string; total: number }[]
-  total_fees: number
-  hourly_rate: number | null
-}
-
-export interface RadarPoint {
-  day: number
-  date: string
-  balance: number
-}
-
-export interface CashflowRadar {
-  balance: number
-  burn_per_day: number
-  burn_next_30d: number
-  committed_next_30d: number
-  projected_balance_30d: number
-  coverage_pct: number | null
-  level: 'healthy' | 'moderate' | 'low' | 'unknown'
-  as_of: string
-  projection: RadarPoint[]
-  runway_days: number | null
-  projected_zero_date: string | null
-}
+export type Source = Schemas['Source']
+export type Category = Schemas['Category']
+export type TxType = Schemas['TransactionCreate']['type']
+export type TransactionCreate = Schemas['TransactionCreate']
+export type TransactionUpdate = Schemas['TransactionUpdate']
+export type Transaction = Schemas['TransactionRead']
+export type CommissionCreate = Schemas['CommissionCreate']
+export type CommissionStatus = Schemas['CommissionStatus']
+export type Commission = Schemas['CommissionRead']
+export type CommissionSummary = Schemas['CommissionSummary']
+export type Summary = Schemas['DashboardSummary']
+export type RadarPoint = Schemas['RadarPoint']
+export type CashflowRadar = Schemas['CashflowRadarRead']
+export type Insights = Schemas['InsightsResponse']
+export type ChatAnswer = Schemas['ChatResponse']
+export type CashflowInsights = Schemas['CashflowInsightsResponse']
 
 export async function streamChat(question: string, onDelta: (text: string) => void): Promise<void> {
   const res = await fetch(`${API_BASE}/chat/stream`, {
@@ -138,25 +97,44 @@ export async function streamChat(question: string, onDelta: (text: string) => vo
 }
 
 export const api = {
-  getSummary: () => request<Summary>('/dashboard/summary'),
-  getInsights: () => request<{ insights: string }>('/dashboard/insights', { method: 'POST' }),
-  getRadar: () => request<CashflowRadar>('/cashflow/radar'),
-  getRadarNarrative: () => request<{ radar: CashflowRadar; narrative: string }>('/cashflow/radar/insights', { method: 'POST' }),
-  chat: (question: string) => request<{ answer: string }>('/chat', { method: 'POST', body: JSON.stringify({ question }) }),
+  getSummary: () => request<OperationResponse<'dashboard_summary_dashboard_summary_get', 200>>('/dashboard/summary'),
+  getInsights: () => request<OperationResponse<'dashboard_insights_dashboard_insights_post', 200>>('/dashboard/insights', { method: 'POST' }),
+  getRadar: () => request<OperationResponse<'cashflow_radar_endpoint_cashflow_radar_get', 200>>('/cashflow/radar'),
+  getRadarNarrative: () =>
+    request<OperationResponse<'cashflow_insights_cashflow_radar_insights_post', 200>>('/cashflow/radar/insights', {
+      method: 'POST',
+    }),
+  chat: (question: string) => request<OperationResponse<'chat_chat_post', 200>>('/chat', {
+    method: 'POST',
+    body: JSON.stringify({ question }),
+  }),
   streamChat,
 
-  listTransactions: () => request<Transaction[]>('/transactions'),
-  createTransaction: (body: Record<string, unknown>) =>
-    request<Transaction>('/transactions', { method: 'POST', body: JSON.stringify(body) }),
-  updateTransaction: (id: number, body: Record<string, unknown>) =>
-    request<Transaction>(`/transactions/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  listTransactions: () => request<OperationResponse<'list_transactions_transactions_get', 200>>('/transactions'),
+  createTransaction: (body: TransactionCreate) =>
+    request<OperationResponse<'create_transaction_transactions_post', 201>>('/transactions', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  updateTransaction: (id: number, body: TransactionUpdate) =>
+    request<OperationResponse<'update_transaction_transactions__transaction_id__patch', 200>>(`/transactions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
   deleteTransaction: (id: number) => request<void>(`/transactions/${id}`, { method: 'DELETE' }),
 
-  listCommissions: () => request<Commission[]>('/commissions'),
-  getCommissionSummary: () => request<CommissionSummary>('/commissions/summary'),
-  createCommission: (body: Record<string, unknown>) =>
-    request<Commission>('/commissions', { method: 'POST', body: JSON.stringify(body) }),
-  updateCommissionStatus: (id: number, status: string) =>
-    request<Commission>(`/commissions/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  listCommissions: () => request<OperationResponse<'list_commissions_commissions_get', 200>>('/commissions'),
+  getCommissionSummary: () =>
+    request<OperationResponse<'commissions_summary_commissions_summary_get', 200>>('/commissions/summary'),
+  createCommission: (body: CommissionCreate) =>
+    request<OperationResponse<'create_commission_commissions_post', 201>>('/commissions', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  updateCommissionStatus: (id: number, status: CommissionStatus) =>
+    request<OperationResponse<'update_commission_commissions__commission_id__patch', 200>>(`/commissions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
   deleteCommission: (id: number) => request<void>(`/commissions/${id}`, { method: 'DELETE' }),
 }

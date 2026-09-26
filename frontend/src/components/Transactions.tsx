@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import type { Source, Transaction } from '../api'
+import type { Category, Source, Transaction, TransactionCreate } from '../api'
 import { fmtMoney, todayISO } from '../format'
 
 const CURRENT_MONTH = todayISO().slice(0, 7)
@@ -59,7 +59,7 @@ const EMPTY_FORM = {
   date: todayISO(),
   fee_amount: '',
   source: 'commission' as Source,
-  category: 'supplies',
+  category: 'supplies' as Category,
 }
 
 export function Transactions() {
@@ -93,7 +93,7 @@ export function Transactions() {
     e.preventDefault()
     setSubmitting(true)
     setError('')
-    const payload: Record<string, unknown> = {
+    const payload: TransactionCreate = {
       type: form.type,
       amount: Number(form.amount),
       description: form.description,

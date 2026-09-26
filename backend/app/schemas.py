@@ -81,14 +81,14 @@ def validate_transaction_fields(
 
 class TransactionRead(SQLModel):
     id: int
-    type: str
+    type: Literal["income", "expense"]
     amount: float
     net_amount: float | None
     description: str
     date: DateType
     fee_amount: float | None
-    source: str | None
-    category: str | None
+    source: Source | None
+    category: Category | None
     merchant: str | None
     auto_categorized: bool
 
@@ -178,6 +178,60 @@ class CommissionSummary(SQLModel):
     lost_income: float
     counts: dict[str, int]
     active_count: int
+
+
+class TrendPoint(SQLModel):
+    month: str
+    income: float
+    expense: float
+    net: float
+
+
+class MerchantTotal(SQLModel):
+    merchant: str
+    total: float
+
+
+class DashboardSummary(SQLModel):
+    balance: float
+    per_source_net: dict[str, float]
+    monthly_trend: list[TrendPoint]
+    top_merchants: list[MerchantTotal]
+    total_fees: float
+    hourly_rate: float | None
+
+
+class RadarPoint(SQLModel):
+    day: int
+    date: str
+    balance: float
+
+
+class CashflowRadarRead(SQLModel):
+    balance: float
+    burn_per_day: float
+    burn_next_30d: float
+    committed_next_30d: float
+    projected_balance_30d: float
+    coverage_pct: float | None
+    level: Literal["healthy", "moderate", "low", "unknown"]
+    as_of: str
+    projection: list[RadarPoint]
+    runway_days: float | None
+    projected_zero_date: str | None
+
+
+class InsightsResponse(SQLModel):
+    insights: str
+
+
+class ChatResponse(SQLModel):
+    answer: str
+
+
+class CashflowInsightsResponse(SQLModel):
+    radar: CashflowRadarRead
+    narrative: str
 
 
 class ChatRequest(SQLModel):

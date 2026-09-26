@@ -5,7 +5,14 @@ from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
 from app.database import get_session
-from app.schemas import ChatRequest
+from app.schemas import (
+    CashflowInsightsResponse,
+    CashflowRadarRead,
+    ChatRequest,
+    ChatResponse,
+    DashboardSummary,
+    InsightsResponse,
+)
 from app.services.llm import LLMClient, get_llm
 from app.services.stats import (
     balance,
@@ -21,7 +28,7 @@ from app.services.stats import (
 router = APIRouter(tags=["dashboard"])
 
 
-@router.get("/dashboard/summary")
+@router.get("/dashboard/summary", response_model=DashboardSummary)
 def dashboard_summary(session: Session = Depends(get_session)):
     return {
         "balance": balance(session),
@@ -33,23 +40,23 @@ def dashboard_summary(session: Session = Depends(get_session)):
     }
 
 
-@router.post("/dashboard/insights")
+@router.post("/dashboard/insights", response_model=InsightsResponse)
 def dashboard_insights(session: Session = Depends(get_session), llm: LLMClient = Depends(get_llm)):
     return {"insights": llm.narrate_insights(context_bundle(session))}
 
 
-@router.get("/cashflow/radar")
+@router.get("/cashflow/radar", response_model=CashflowRadarRead)
 def cashflow_radar_endpoint(session: Session = Depends(get_session)):
     return cashflow_radar(session)
 
 
-@router.post("/cashflow/radar/insights")
+@router.post("/cashflow/radar/insights", response_model=CashflowInsightsResponse)
 def cashflow_insights(session: Session = Depends(get_session), llm: LLMClient = Depends(get_llm)):
     radar = cashflow_radar(session)
     return {"radar": radar, "narrative": llm.narrate_cashflow(radar)}
 
 
-@router.post("/chat")
+@router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest, session: Session = Depends(get_session), llm: LLMClient = Depends(get_llm)):
     return {"answer": llm.answer_question(request.question, context_bundle(session))}
 

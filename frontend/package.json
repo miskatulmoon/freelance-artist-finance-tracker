@@ -11,7 +11,8 @@
     "typecheck": "tsc -b",
     "test:e2e": "playwright test",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "generate:api": "npx -y openapi-typescript@7.13.0 ../openapi.json -o src/types/api.d.ts"
   },
   "dependencies": {
     "react": "^19.2.8",
