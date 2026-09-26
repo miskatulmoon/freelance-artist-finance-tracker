@@ -2,7 +2,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
-from app.database import run_migrations
+from app.database import HEAD_REVISION, run_migrations
 from app.models import Commission
 
 
@@ -32,7 +32,7 @@ def test_migrations_record_version_history(legacy_engine):
 
     with legacy_engine.connect() as conn:
         current = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-    assert current == "0002"
+    assert current == HEAD_REVISION
 
 
 def test_fresh_database_via_migrations_matches_metadata():

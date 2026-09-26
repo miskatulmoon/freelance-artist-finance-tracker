@@ -20,7 +20,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/components/schemas/Source"
                 },
                 {
                   "type": "null"
@@ -36,7 +36,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/components/schemas/Category"
                 },
                 {
                   "type": "null"
@@ -52,6 +52,10 @@
             "schema": {
               "anyOf": [
                 {
+                  "enum": [
+                    "income",
+                    "expense"
+                  ],
                   "type": "string"
                 },
                 {
@@ -96,6 +100,22 @@
             }
           },
           {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "date_desc",
+                "date_asc",
+                "amount_desc",
+                "amount_asc"
+              ],
+              "type": "string",
+              "default": "date_desc",
+              "title": "Sort"
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -125,11 +145,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TransactionRead"
-                  },
-                  "title": "Response List Transactions Transactions Get"
+                  "$ref": "#/components/schemas/TransactionPage"
                 }
               }
             }
@@ -278,17 +294,64 @@
         ],
         "summary": "List Commissions",
         "operationId": "list_commissions_commissions_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CommissionStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/CommissionRead"
-                  },
-                  "type": "array",
-                  "title": "Response List Commissions Commissions Get"
+                  "$ref": "#/components/schemas/CommissionPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -302,14 +365,14 @@
         "summary": "Create Commission",
         "operationId": "create_commission_commissions_post",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CommissionCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -749,6 +812,7 @@
         "properties": {
           "question": {
             "type": "string",
+            "maxLength": 2000,
             "minLength": 1,
             "title": "Question"
           }
@@ -837,6 +901,38 @@
         ],
         "title": "CommissionCreate",
         "description": "API boundary: accepts dollars, exposes integer cents to the domain."
+      },
+      "CommissionPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CommissionRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "CommissionPage",
+        "description": "Envelope pagination for commissions (see TransactionPage)."
       },
       "CommissionRead": {
         "properties": {
@@ -1193,6 +1289,38 @@
         ],
         "title": "TransactionCreate",
         "description": "API boundary: accepts dollars, exposes integer cents to the domain."
+      },
+      "TransactionPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "TransactionPage",
+        "description": "Envelope pagination: items for this slice + total matching the filters."
       },
       "TransactionRead": {
         "properties": {

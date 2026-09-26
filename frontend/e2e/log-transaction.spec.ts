@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test'
 
 test('logs an income transaction from the slips page', async ({ page }) => {
-  let transactions = []
+  let transactions: unknown[] = []
 
-  await page.route('**/api/transactions', async (route) => {
+  await page.route('**/api/transactions**', async (route) => {
     if (route.request().method() === 'GET') {
-      await route.fulfill({ json: transactions })
+      await route.fulfill({ json: { items: transactions, total: transactions.length, limit: 100, offset: 0 } })
       return
     }
     const body = route.request().postDataJSON()

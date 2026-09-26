@@ -25,7 +25,7 @@ describe('Transactions form', () => {
 
   beforeEach(() => {
     vi.resetAllMocks()
-    mockedApi.listTransactions.mockResolvedValue([])
+    mockedApi.listTransactions.mockResolvedValue({ items: [], total: 0, limit: 100, offset: 0 })
   })
 
   it('uses native validation and does not submit incomplete forms', async () => {

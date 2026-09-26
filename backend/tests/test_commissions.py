@@ -5,7 +5,7 @@ def test_commission_effective_rate(client, session):
     income = make_tx("income", 500.0, "portrait comm", source="commission")
     session.add(income)
     session.commit()
-    income_id = client.get("/transactions").json()[0]["id"]
+    income_id = client.get("/transactions").json()["items"][0]["id"]
 
     r = client.post(
         "/commissions",
@@ -112,7 +112,7 @@ def test_patch_commission_rejects_term_changes(client):
     for field in ("hours_spent", "amount", "expected_date", "client", "piece"):
         response = client.patch(f"/commissions/{created['id']}", json={field: 1 if field != "client" else "x"})
         assert response.status_code == 422, field
-        assert created[field] == client.get("/commissions").json()[0][field]
+        assert created[field] == client.get("/commissions").json()["items"][0][field]
 
 
 def test_completing_commission_logs_income_automatically(client, session):
@@ -127,7 +127,7 @@ def test_completing_commission_logs_income_automatically(client, session):
     assert body["transaction_id"] is not None
     assert body["effective_rate"] == 40.0
 
-    slips = client.get("/transactions").json()
+    slips = client.get("/transactions").json()["items"]
     assert len(slips) == 1
     assert slips[0]["source"] == "commission"
     assert slips[0]["amount"] == 400
@@ -143,7 +143,7 @@ def test_completing_commission_without_price_fails(client):
     r = client.patch(f"/commissions/{created['id']}", json={"status": "completed"})
     assert r.status_code == 422
     assert "agreed price" in r.json()["detail"]
-    assert client.get("/commissions").json()[0]["status"] == "in_progress"
+    assert client.get("/commissions").json()["items"][0]["status"] == "in_progress"
 
 
 def test_completing_commission_with_manual_link_does_not_duplicate_income(client, session):
@@ -161,7 +161,7 @@ def test_completing_commission_with_manual_link_does_not_duplicate_income(client
 
     assert r.status_code == 200
     assert r.json()["income_autologged"] is False
-    assert len(client.get("/transactions").json()) == 1
+    assert len(client.get("/transactions").json()["items"]) == 1
 
 
 def test_recompleting_commission_does_not_duplicate_income(client):
@@ -171,7 +171,7 @@ def test_recompleting_commission_does_not_duplicate_income(client):
     client.patch(f"/commissions/{created['id']}", json={"status": "completed"})
     client.patch(f"/commissions/{created['id']}", json={"status": "completed"})
 
-    assert len(client.get("/transactions").json()) == 1
+    assert len(client.get("/transactions").json()["items"]) == 1
 
 
 def test_reopening_commission_retracts_autologged_income(client, session):
@@ -185,7 +185,7 @@ def test_reopening_commission_retracts_autologged_income(client, session):
     assert r.status_code == 200
     assert r.json()["transaction_id"] is None
     assert r.json()["income_autologged"] is False
-    assert client.get("/transactions").json() == []
+    assert client.get("/transactions").json()["items"] == []
 
     from app.services.stats import balance
 
@@ -208,7 +208,7 @@ def test_reopening_commission_keeps_manually_linked_income(client, session):
 
     assert r.status_code == 200
     assert r.json()["transaction_id"] == income.id
-    assert len(client.get("/transactions").json()) == 1
+    assert len(client.get("/transactions").json()["items"]) == 1
 
 
 def test_cancelling_completed_commission_retracts_income(client):
@@ -218,7 +218,7 @@ def test_cancelling_completed_commission_retracts_income(client):
     client.patch(f"/commissions/{created['id']}", json={"status": "completed"})
     client.patch(f"/commissions/{created['id']}", json={"status": "cancelled"})
 
-    assert client.get("/transactions").json() == []
+    assert client.get("/transactions").json()["items"] == []
 
 
 def test_deleting_completed_commission_retracts_income(client):
@@ -228,7 +228,7 @@ def test_deleting_completed_commission_retracts_income(client):
     client.patch(f"/commissions/{created['id']}", json={"status": "completed"})
 
     assert client.delete(f"/commissions/{created['id']}").status_code == 204
-    assert client.get("/transactions").json() == []
+    assert client.get("/transactions").json()["items"] == []
 
 
 def test_creating_completed_commission_logs_income_automatically(client):
@@ -239,7 +239,7 @@ def test_creating_completed_commission_logs_income_automatically(client):
     assert r.status_code == 201
     assert r.json()["income_autologged"] is True
     assert r.json()["effective_rate"] == 50.0
-    assert len(client.get("/transactions").json()) == 1
+    assert len(client.get("/transactions").json()["items"]) == 1
 
 
 def test_commissions_summary_by_status(client):
@@ -267,3 +267,58 @@ def test_delete_commission(client):
 def test_commission_rejects_empty_client(client):
     r = client.post("/commissions", json={"client": "", "piece": "x"})
     assert r.status_code == 422
+
+
+def test_list_commissions_returns_envelope_with_total(client):
+    client.post("/commissions", json={"client": "a", "piece": "one"})
+    client.post("/commissions", json={"client": "b", "piece": "two"})
+
+    body = client.get("/commissions").json()
+    assert body["total"] == 2
+    assert len(body["items"]) == 2
+    assert body["limit"] == 50
+    assert body["offset"] == 0
+
+
+def test_list_commissions_paginates(client):
+    for i in range(5):
+        client.post("/commissions", json={"client": f"c{i}", "piece": f"piece-{i}"})
+
+    first = client.get("/commissions", params={"limit": 2}).json()
+    second = client.get("/commissions", params={"limit": 2, "offset": 2}).json()
+    assert first["total"] == 5
+    assert len(first["items"]) == 2
+    assert second["total"] == 5
+    assert len(second["items"]) == 2
+    first_ids = {row["id"] for row in first["items"]}
+    second_ids = {row["id"] for row in second["items"]}
+    assert first_ids.isdisjoint(second_ids)
+
+
+def test_list_commissions_filters_by_status(client):
+    client.post("/commissions", json={"client": "a", "piece": "x", "status": "agreed"})
+    client.post("/commissions", json={"client": "b", "piece": "y", "status": "completed", "amount": 50})
+    client.post("/commissions", json={"client": "c", "piece": "z", "status": "in_progress"})
+
+    body = client.get("/commissions", params={"status": "completed"}).json()
+    assert body["total"] == 1
+    assert body["items"][0]["status"] == "completed"
+
+
+def test_list_commissions_rejects_invalid_status(client):
+    assert client.get("/commissions", params={"status": "bogus"}).status_code == 422
+
+
+def test_list_commissions_rejects_invalid_pagination_bounds(client):
+    assert client.get("/commissions", params={"limit": 0}).status_code == 422
+    assert client.get("/commissions", params={"limit": 101}).status_code == 422
+    assert client.get("/commissions", params={"offset": -1}).status_code == 422
+
+
+def test_list_commissions_orders_active_first(client):
+    client.post("/commissions", json={"client": "done", "piece": "x", "status": "completed", "amount": 10})
+    client.post("/commissions", json={"client": "work", "piece": "y", "status": "in_progress"})
+    client.post("/commissions", json={"client": "lost", "piece": "z", "status": "cancelled"})
+
+    items = client.get("/commissions").json()["items"]
+    assert [row["status"] for row in items] == ["in_progress", "completed", "cancelled"]

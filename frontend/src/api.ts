@@ -44,6 +44,9 @@ export type TxType = Schemas['TransactionCreate']['type']
 export type TransactionCreate = Schemas['TransactionCreate']
 export type TransactionUpdate = Schemas['TransactionUpdate']
 export type Transaction = Schemas['TransactionRead']
+export type TransactionPage = Schemas['TransactionPage']
+export type CommissionPage = Schemas['CommissionPage']
+export type TransactionSort = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'
 export type CommissionCreate = Schemas['CommissionCreate']
 export type CommissionStatus = Schemas['CommissionStatus']
 export type Commission = Schemas['CommissionRead']
@@ -54,6 +57,32 @@ export type CashflowRadar = Schemas['CashflowRadarRead']
 export type Insights = Schemas['InsightsResponse']
 export type ChatAnswer = Schemas['ChatResponse']
 export type CashflowInsights = Schemas['CashflowInsightsResponse']
+
+export interface ListTransactionsParams {
+  source?: Source
+  category?: Category
+  type?: TxType
+  from_date?: string
+  to_date?: string
+  sort?: TransactionSort
+  limit?: number
+  offset?: number
+}
+
+export interface ListCommissionsParams {
+  status?: CommissionStatus
+  limit?: number
+  offset?: number
+}
+
+function toQuery(params: object): string {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) search.set(key, String(value))
+  }
+  const query = search.toString()
+  return query ? `?${query}` : ''
+}
 
 export async function streamChat(
   question: string,
@@ -115,7 +144,8 @@ export const api = {
   }),
   streamChat,
 
-  listTransactions: () => request<OperationResponse<'list_transactions_transactions_get', 200>>('/transactions'),
+  listTransactions: (params: ListTransactionsParams = {}) =>
+    request<OperationResponse<'list_transactions_transactions_get', 200>>(`/transactions${toQuery(params)}`),
   createTransaction: (body: TransactionCreate) =>
     request<OperationResponse<'create_transaction_transactions_post', 201>>('/transactions', {
       method: 'POST',
@@ -128,7 +158,8 @@ export const api = {
     }),
   deleteTransaction: (id: number) => request<void>(`/transactions/${id}`, { method: 'DELETE' }),
 
-  listCommissions: () => request<OperationResponse<'list_commissions_commissions_get', 200>>('/commissions'),
+  listCommissions: (params: ListCommissionsParams = {}) =>
+    request<OperationResponse<'list_commissions_commissions_get', 200>>(`/commissions${toQuery(params)}`),
   getCommissionSummary: () =>
     request<OperationResponse<'commissions_summary_commissions_summary_get', 200>>('/commissions/summary'),
   createCommission: (body: CommissionCreate) =>

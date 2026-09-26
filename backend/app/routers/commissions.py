@@ -1,27 +1,34 @@
 from datetime import date as DateType
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import case, func
 from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import Commission, CommissionStatus, Source, Transaction
-from app.schemas import CommissionCreate, CommissionRead, CommissionSummary, CommissionUpdate
+from app.schemas import CommissionCreate, CommissionPage, CommissionRead, CommissionSummary, CommissionUpdate
 from app.services.stats import commission_income_summary
 
 router = APIRouter(prefix="/commissions", tags=["commissions"])
 
-_STATUS_ORDER = {
-    CommissionStatus.IN_PROGRESS.value: 0,
-    CommissionStatus.AGREED.value: 1,
-    CommissionStatus.COMPLETED.value: 2,
-    CommissionStatus.CANCELLED.value: 3,
-}
+
+def _status_rank():
+    return case(
+        (Commission.status == CommissionStatus.IN_PROGRESS.value, 0),
+        (Commission.status == CommissionStatus.AGREED.value, 1),
+        (Commission.status == CommissionStatus.COMPLETED.value, 2),
+        (Commission.status == CommissionStatus.CANCELLED.value, 3),
+        else_=4,
+    )
 
 
-def _sort_key(c: Commission) -> tuple:
-    rank = _STATUS_ORDER.get(c.status, 4)
-    due = (0, c.expected_date.toordinal()) if c.expected_date else (1, 0)
-    return (rank, due, -c.created_at.timestamp())
+def _ordered_query():
+    return select(Commission).order_by(
+        _status_rank().asc(),
+        Commission.expected_date.asc().nulls_last(),
+        Commission.created_at.desc(),
+        Commission.id.desc(),
+    )
 
 
 def _get_or_404(session: Session, commission_id: int) -> Commission:
@@ -99,10 +106,26 @@ def _apply_status(session: Session, c: Commission, new_status: str) -> None:
     c.status = new_status
 
 
-@router.get("", response_model=list[CommissionRead])
-def list_commissions(session: Session = Depends(get_session)):
-    rows = session.exec(select(Commission)).all()
-    return [CommissionRead.from_model(c) for c in sorted(rows, key=_sort_key)]
+@router.get("", response_model=CommissionPage)
+def list_commissions(
+    status: CommissionStatus | None = None,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: Session = Depends(get_session),
+):
+    base = _ordered_query()
+    count_stmt = select(func.count()).select_from(Commission)
+    if status is not None:
+        base = base.where(Commission.status == status.value)
+        count_stmt = count_stmt.where(Commission.status == status.value)
+    total = int(session.exec(count_stmt).one() or 0)
+    rows = session.exec(base.offset(offset).limit(limit)).all()
+    return CommissionPage(
+        items=[CommissionRead.from_model(c) for c in rows],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get("/summary", response_model=CommissionSummary)

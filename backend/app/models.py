@@ -3,6 +3,7 @@ from datetime import date as DateType
 from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 
+from sqlalchemy import Index
 from sqlmodel import Field, Relationship, SQLModel
 
 # Money is stored as integer cents. Convert at the API boundary only.
@@ -42,15 +43,17 @@ class CommissionStatus(StrEnum):
 
 
 class Transaction(SQLModel, table=True):
+    __table_args__ = (Index("ix_transaction_type_date", "type", "date"),)
+
     id: int | None = Field(default=None, primary_key=True)
-    type: str
+    type: str = Field(index=True)
     amount_cents: int
     description: str
-    date: DateType
+    date: DateType = Field(index=True)
     fee_amount_cents: int | None = None
-    source: str | None = None
+    source: str | None = Field(default=None, index=True)
     category: str | None = None
-    merchant: str | None = None
+    merchant: str | None = Field(default=None, index=True)
     auto_categorized: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
@@ -58,13 +61,15 @@ class Transaction(SQLModel, table=True):
 
 
 class Commission(SQLModel, table=True):
+    __table_args__ = (Index("ix_commission_status_expected_date", "status", "expected_date"),)
+
     id: int | None = Field(default=None, primary_key=True)
     client: str
     piece: str
     hours_spent: float = 0.0
     amount_cents: int | None = None
-    expected_date: DateType | None = None
-    status: str = CommissionStatus.IN_PROGRESS.value
+    expected_date: DateType | None = Field(default=None, index=True)
+    status: str = Field(default=CommissionStatus.IN_PROGRESS.value, index=True)
     transaction_id: int | None = Field(default=None, foreign_key="transaction.id", unique=True)
     income_autologged: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

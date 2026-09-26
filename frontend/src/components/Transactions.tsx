@@ -21,6 +21,13 @@ function formatMonth(month: string): string {
   return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(year, monthNumber - 1, 1))
 }
 
+function lastDayOfMonth(month: string): string {
+  const [year, monthNumber] = month.split('-').map(Number)
+  return new Date(year, monthNumber, 0).toISOString().slice(0, 10)
+}
+
+const PAGE_SIZE = 100
+
 const SOURCES: { value: Source; label: string }[] = [
   { value: 'commission', label: 'Commission' },
   { value: 'etsy', label: 'Etsy / shop' },
@@ -64,28 +71,41 @@ const EMPTY_FORM = {
 
 export function Transactions() {
   const [rows, setRows] = useState<Transaction[]>([])
-  const [selectedMonth, setSelectedMonth] = useState<string | null>(null)
+  const [total, setTotal] = useState(0)
+  const [selectedMonth, setSelectedMonth] = useState<string>(CURRENT_MONTH)
   const [form, setForm] = useState({ ...EMPTY_FORM })
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const load = async () => {
+  const loadMonth = async (month: string, append = false, existing: Transaction[] = []) => {
+    if (append) setLoadingMore(true)
+    else setLoading(true)
     try {
-      const nextRows = await api.listTransactions()
-      setRows(nextRows)
-      setSelectedMonth((current) => current ?? (nextRows[0] ? monthKey(nextRows[0].date) : CURRENT_MONTH))
+      const page = await api.listTransactions({
+        from_date: `${month}-01`,
+        to_date: lastDayOfMonth(month),
+        sort: 'date_desc',
+        limit: PAGE_SIZE,
+        offset: append ? existing.length : 0,
+      })
+      setRows(append ? [...existing, ...page.items] : page.items)
+      setTotal(page.total)
       setError('')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
   }
 
   useEffect(() => {
-    void load()
-  }, [])
+    void loadMonth(selectedMonth)
+  }, [selectedMonth])
+
+  const loadMore = () => void loadMonth(selectedMonth, true, rows)
 
   const set = (key: keyof typeof EMPTY_FORM, value: string) => setForm((f) => ({ ...f, [key]: value }))
 
@@ -106,7 +126,9 @@ export function Transactions() {
     try {
       await api.createTransaction(payload)
       setForm({ ...EMPTY_FORM })
-      await load()
+      const createdMonth = monthKey(form.date)
+      if (createdMonth !== selectedMonth) setSelectedMonth(createdMonth)
+      else await loadMonth(selectedMonth)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add')
     } finally {
@@ -117,17 +139,14 @@ export function Transactions() {
   const remove = async (id: number) => {
     try {
       await api.deleteTransaction(id)
-      await load()
+      await loadMonth(selectedMonth)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete')
     }
   }
 
-  const activeMonth = selectedMonth ?? CURRENT_MONTH
-  const months = rows.map((row) => monthKey(row.date))
-  const earliestMonth = months.length > 0 ? months[months.length - 1] : activeMonth
-  const latestMonth = months.length > 0 ? months[0] : activeMonth
-  const visibleRows = rows.filter((row) => monthKey(row.date) === activeMonth)
+  const activeMonth = selectedMonth
+  const visibleRows = rows
 
   return (
     <div className="stack">
@@ -211,7 +230,9 @@ export function Transactions() {
       <div className="card">
         <div className="slips-heading">
           <h3>Slips for {formatMonth(activeMonth)}</h3>
-          <span className="text-dim">{visibleRows.length} logged</span>
+          <span className="text-dim">
+            {total === 0 ? 'nothing logged' : `${visibleRows.length} of ${total} logged`}
+          </span>
         </div>
         {loading && <div className="loading">Loading…</div>}
         {!loading && (
@@ -262,21 +283,29 @@ export function Transactions() {
                   {visibleRows.length === 0 && (
                     <tr>
                       <td colSpan={7} className="text-dim">
-                        {rows.length === 0
-                          ? "No slips yet — money in or out, start with today's. The assistant can tag it for you if you have no idea where it fits."
-                          : `No slips logged in ${formatMonth(activeMonth)}.`}
+                        {`No slips logged in ${formatMonth(activeMonth)}.`}
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
+            {visibleRows.length < total && (
+              <button
+                type="button"
+                className="month-pager-button"
+                disabled={loadingMore}
+                onClick={loadMore}
+                style={{ marginTop: 8 }}
+              >
+                {loadingMore ? 'Loading…' : `Show more (${total - visibleRows.length} remaining)`}
+              </button>
+            )}
             <div className="month-pager" aria-label="Slip months">
               <button
                 type="button"
                 className="month-pager-button"
                 aria-label="View earlier month"
-                disabled={activeMonth <= earliestMonth}
                 onClick={() => setSelectedMonth(shiftMonth(activeMonth, -1))}
               >
                 ← Earlier
@@ -286,7 +315,6 @@ export function Transactions() {
                 type="button"
                 className="month-pager-button"
                 aria-label="View later month"
-                disabled={activeMonth >= latestMonth}
                 onClick={() => setSelectedMonth(shiftMonth(activeMonth, 1))}
               >
                 Later →

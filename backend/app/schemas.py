@@ -180,6 +180,24 @@ class CommissionSummary(SQLModel):
     active_count: int
 
 
+class TransactionPage(SQLModel):
+    """Envelope pagination: items for this slice + total matching the filters."""
+
+    items: list[TransactionRead]
+    total: int
+    limit: int
+    offset: int
+
+
+class CommissionPage(SQLModel):
+    """Envelope pagination for commissions (see TransactionPage)."""
+
+    items: list[CommissionRead]
+    total: int
+    limit: int
+    offset: int
+
+
 class TrendPoint(SQLModel):
     month: str
     income: float

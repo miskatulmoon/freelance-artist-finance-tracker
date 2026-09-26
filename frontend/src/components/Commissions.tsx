@@ -15,6 +15,10 @@ const EMPTY_FORM = {
 
 const STATUSES: CommissionStatus[] = ['agreed', 'in_progress', 'completed', 'cancelled']
 
+const PAGE_SIZE = 20
+
+type StatusFilter = CommissionStatus | 'all'
+
 const SUMMARY_HINTS = {
   expected: 'agreed or in progress',
   earned: 'finished pieces, already in the ledger',
@@ -23,31 +27,44 @@ const SUMMARY_HINTS = {
 
 export function Commissions() {
   const [rows, setRows] = useState<Commission[]>([])
+  const [total, setTotal] = useState(0)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [summary, setSummary] = useState<CommissionSummary | null>(null)
   const [form, setForm] = useState({ ...EMPTY_FORM })
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const load = async () => {
+  const load = async (status: StatusFilter, append = false, existing: Commission[] = []) => {
+    if (append) setLoadingMore(true)
+    else setLoading(true)
     try {
-      const [commissions, commissionSummary] = await Promise.all([
-        api.listCommissions(),
-        api.getCommissionSummary(),
+      const [page, commissionSummary] = await Promise.all([
+        api.listCommissions({
+          status: status === 'all' ? undefined : status,
+          limit: PAGE_SIZE,
+          offset: append ? existing.length : 0,
+        }),
+        append ? Promise.resolve(summary) : api.getCommissionSummary(),
       ])
-      setRows(commissions)
-      setSummary(commissionSummary)
+      setRows(append ? [...existing, ...page.items] : page.items)
+      setTotal(page.total)
+      if (commissionSummary) setSummary(commissionSummary)
       setError('')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
   }
 
   useEffect(() => {
-    void load()
-  }, [])
+    void load(statusFilter)
+  }, [statusFilter])
+
+  const loadMore = () => void load(statusFilter, true, rows)
 
   const set = (key: keyof typeof EMPTY_FORM, value: string) => setForm((f) => ({ ...f, [key]: value }))
 
@@ -66,7 +83,7 @@ export function Commissions() {
     try {
       await api.createCommission(payload)
       setForm({ ...EMPTY_FORM })
-      await load()
+      await load(statusFilter)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add')
     } finally {
@@ -77,7 +94,7 @@ export function Commissions() {
   const remove = async (id: number) => {
     try {
       await api.deleteCommission(id)
-      await load()
+      await load(statusFilter)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete')
     }
@@ -89,7 +106,7 @@ export function Commissions() {
     setRows((rs) => rs.map((c) => (c.id === id ? { ...c, status } : c)))
     try {
       await api.updateCommissionStatus(id, status)
-      await load()
+      await load(statusFilter)
     } catch (err) {
       setRows((rs) => rs.map((c) => (c.id === id && prev ? { ...c, status: prev } : c)))
       setError(err instanceof Error ? err.message : 'Failed to update status')
@@ -198,9 +215,26 @@ export function Commissions() {
       </form>
 
       <div className="card">
-        <h3>
-          Commissions <span className="text-dim">· {totalHours} hrs logged</span>
-        </h3>
+        <div className="slips-heading">
+          <h3>
+            Commissions <span className="text-dim">· {totalHours} hrs logged</span>
+          </h3>
+          <label className="field" style={{ minWidth: 150 }}>
+            <span className="text-dim">Progress</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              aria-label="Filter commissions by progress"
+            >
+              <option value="all">All ({total})</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s.replace('_', ' ')}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         {loading && <div className="loading">Loading…</div>}
         {!loading && (
           <div className="table-wrap" style={{ marginTop: 8 }}>
@@ -281,6 +315,17 @@ export function Commissions() {
               </tbody>
             </table>
           </div>
+        )}
+        {!loading && rows.length < total && (
+          <button
+            type="button"
+            className="month-pager-button"
+            disabled={loadingMore}
+            onClick={loadMore}
+            style={{ marginTop: 8 }}
+          >
+            {loadingMore ? 'Loading…' : `Show more (${total - rows.length} remaining)`}
+          </button>
         )}
       </div>
 

@@ -288,6 +288,20 @@ export interface components {
             /** Transaction Id */
             transaction_id?: number | null;
         };
+        /**
+         * CommissionPage
+         * @description Envelope pagination for commissions (see TransactionPage).
+         */
+        CommissionPage: {
+            /** Items */
+            items: components["schemas"]["CommissionRead"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** CommissionRead */
         CommissionRead: {
             /** Id */
@@ -414,6 +428,20 @@ export interface components {
             /** Merchant */
             merchant?: string | null;
         };
+        /**
+         * TransactionPage
+         * @description Envelope pagination: items for this slice + total matching the filters.
+         */
+        TransactionPage: {
+            /** Items */
+            items: components["schemas"]["TransactionRead"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** TransactionRead */
         TransactionRead: {
             /** Id */
@@ -494,11 +522,12 @@ export interface operations {
     list_transactions_transactions_get: {
         parameters: {
             query?: {
-                source?: string | null;
-                category?: string | null;
-                type?: string | null;
+                source?: components["schemas"]["Source"] | null;
+                category?: components["schemas"]["Category"] | null;
+                type?: ("income" | "expense") | null;
                 from_date?: string | null;
                 to_date?: string | null;
+                sort?: "date_desc" | "date_asc" | "amount_desc" | "amount_asc";
                 limit?: number;
                 offset?: number;
             };
@@ -514,7 +543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TransactionRead"][];
+                    "application/json": components["schemas"]["TransactionPage"];
                 };
             };
             /** @description Validation Error */
@@ -627,7 +656,11 @@ export interface operations {
     };
     list_commissions_commissions_get: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: components["schemas"]["CommissionStatus"] | null;
+                limit?: number;
+                offset?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -640,7 +673,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommissionRead"][];
+                    "application/json": components["schemas"]["CommissionPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

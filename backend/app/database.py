@@ -13,7 +13,7 @@ engine = create_engine(get_settings().database_url, connect_args=connect_args)
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 BASELINE_REVISION = "0001"
-HEAD_REVISION = "0002"
+HEAD_REVISION = "0003"
 
 
 def _alembic_config() -> Config:

@@ -1,14 +1,24 @@
 from datetime import date as DateType
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import Transaction, cents_to_dollars
-from app.schemas import TransactionCreate, TransactionRead, TransactionUpdate, validate_transaction_fields
+from app.models import Category, Source, Transaction, cents_to_dollars
+from app.schemas import (
+    TransactionCreate,
+    TransactionPage,
+    TransactionRead,
+    TransactionUpdate,
+    validate_transaction_fields,
+)
 from app.services.llm import LLMClient, get_llm
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
+
+TransactionSort = Literal["date_desc", "date_asc", "amount_desc", "amount_asc"]
 
 
 def _categorize(tx: Transaction, llm: LLMClient) -> None:
@@ -32,32 +42,52 @@ def _get_or_404(session: Session, transaction_id: int) -> Transaction:
     return tx
 
 
-@router.get("", response_model=list[TransactionRead])
+@router.get("", response_model=TransactionPage)
 def list_transactions(
-    source: str | None = None,
-    category: str | None = None,
-    type: str | None = None,
+    source: Source | None = None,
+    category: Category | None = None,
+    type: Literal["income", "expense"] | None = None,
     from_date: DateType | None = None,
     to_date: DateType | None = None,
+    sort: TransactionSort = Query(default="date_desc"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
 ):
+    filters = []
+    if source is not None:
+        filters.append(Transaction.source == source.value)
+    if category is not None:
+        filters.append(Transaction.category == category.value)
+    if type is not None:
+        filters.append(Transaction.type == type)
+    if from_date is not None:
+        filters.append(Transaction.date >= from_date)
+    if to_date is not None:
+        filters.append(Transaction.date <= to_date)
+
+    count_stmt = select(func.count()).select_from(Transaction)
+    for criterion in filters:
+        count_stmt = count_stmt.where(criterion)
+    total = int(session.exec(count_stmt).one() or 0)
+
+    ordering = {
+        "date_desc": (Transaction.date.desc(), Transaction.id.desc()),
+        "date_asc": (Transaction.date.asc(), Transaction.id.asc()),
+        "amount_desc": (Transaction.amount_cents.desc(), Transaction.id.desc()),
+        "amount_asc": (Transaction.amount_cents.asc(), Transaction.id.asc()),
+    }[sort]
+
     query = select(Transaction)
-    if source:
-        query = query.where(Transaction.source == source)
-    if category:
-        query = query.where(Transaction.category == category)
-    if type:
-        query = query.where(Transaction.type == type)
-    if from_date:
-        query = query.where(Transaction.date >= from_date)
-    if to_date:
-        query = query.where(Transaction.date <= to_date)
-    rows = session.exec(
-        query.order_by(Transaction.date.desc(), Transaction.id.desc()).offset(offset).limit(limit)
-    ).all()
-    return [TransactionRead.from_model(tx) for tx in rows]
+    for criterion in filters:
+        query = query.where(criterion)
+    rows = session.exec(query.order_by(*ordering).offset(offset).limit(limit)).all()
+    return TransactionPage(
+        items=[TransactionRead.from_model(tx) for tx in rows],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.post("", response_model=TransactionRead, status_code=201)

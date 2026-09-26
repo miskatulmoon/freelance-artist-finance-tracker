@@ -89,9 +89,9 @@ Interactive docs at `/docs`. Main routes:
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET/POST | `/transactions` | List (filters: source, category, type, date range) / create (auto-categorizes) |
+| GET/POST | `/transactions` | Paged `{items, total, limit, offset}` (filters: source, category, type, date range; sort: date/amount asc/desc) / create (auto-categorizes) |
 | PATCH/DELETE | `/transactions/{id}` | Edit / delete |
-| GET/POST | `/commissions` | List (active work first) / log a commission with its agreed terms |
+| GET/POST | `/commissions` | Paged `{items, total, limit, offset}` (filter: status; active work first, DB-ordered) / log a commission with its agreed terms |
 | GET | `/commissions/summary` | Income by status: expected / earned / lost, plus counts |
 | PATCH/DELETE | `/commissions/{id}` | Update progress — status only; price, hours, and due date lock at logging / delete |
 | GET | `/dashboard/summary` | Balance, per-source net, trend, top merchants, fees, $/hr |
