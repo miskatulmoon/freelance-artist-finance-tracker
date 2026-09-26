@@ -39,10 +39,15 @@ Key design choices:
 ```bash
 cd backend
 uv sync --locked
+<<<<<<< HEAD
 
 cp .env.example .env   # add your LLM_API_KEY
 uv run --locked python seed.py         # optional: load the demo dataset
 uv run --locked uvicorn app.main:app --reload   # applies Alembic migrations on startup
+=======
+uv run --locked python seed.py
+uv run --locked uvicorn app.main:app --reload
+>>>>>>> 9435d5b2da6fdcb3b55925a245097f75798b8b91
 ```
 
 Python dependencies are resolved and pinned in `backend/uv.lock`; `requirements.txt` is an exact, generated pip-compatible export. Schema changes are versioned with **Alembic** (`backend/migrations/`); `init_db()` stamps the baseline on pre-Alembic ledgers and upgrades to head on every startup. To run migrations manually: `uv run --locked alembic upgrade head` from `backend/`.
