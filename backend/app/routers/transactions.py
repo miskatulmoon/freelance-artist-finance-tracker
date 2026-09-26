@@ -1,6 +1,6 @@
 from datetime import date as DateType
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
 from app.database import get_session
@@ -39,6 +39,8 @@ def list_transactions(
     type: str | None = None,
     from_date: DateType | None = None,
     to_date: DateType | None = None,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
 ):
     query = select(Transaction)
@@ -52,7 +54,9 @@ def list_transactions(
         query = query.where(Transaction.date >= from_date)
     if to_date:
         query = query.where(Transaction.date <= to_date)
-    rows = session.exec(query.order_by(Transaction.date.desc(), Transaction.id.desc())).all()
+    rows = session.exec(
+        query.order_by(Transaction.date.desc(), Transaction.id.desc()).offset(offset).limit(limit)
+    ).all()
     return [TransactionRead.from_model(tx) for tx in rows]
 
 

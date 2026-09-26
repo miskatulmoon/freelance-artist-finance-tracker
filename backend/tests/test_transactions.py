@@ -100,6 +100,27 @@ def test_list_and_filter_by_source(client, session):
     assert only_etsy[0]["source"] == "etsy"
 
 
+def test_list_paginates_in_stable_sort_order(client, session):
+    from tests.conftest import make_tx
+
+    session.add(make_tx("expense", 10.0, "old", tx_date=date(2026, 8, 1)))
+    session.add(make_tx("expense", 20.0, "new", tx_date=date(2026, 9, 1)))
+    session.add(make_tx("expense", 30.0, "newest", tx_date=date(2026, 9, 1)))
+    session.commit()
+
+    first_page = client.get("/transactions", params={"limit": 2}).json()
+    second_page = client.get("/transactions", params={"limit": 2, "offset": 2}).json()
+
+    assert [row["description"] for row in first_page] == ["newest", "new"]
+    assert [row["description"] for row in second_page] == ["old"]
+
+
+def test_list_rejects_invalid_pagination_bounds(client):
+    assert client.get("/transactions", params={"limit": 0}).status_code == 422
+    assert client.get("/transactions", params={"limit": 101}).status_code == 422
+    assert client.get("/transactions", params={"offset": -1}).status_code == 422
+
+
 def test_filter_by_date_range(client, session):
     from tests.conftest import make_tx
 

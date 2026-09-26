@@ -499,6 +499,8 @@ export interface operations {
                 type?: string | null;
                 from_date?: string | null;
                 to_date?: string | null;
+                limit?: number;
+                offset?: number;
             };
             header?: never;
             path?: never;
