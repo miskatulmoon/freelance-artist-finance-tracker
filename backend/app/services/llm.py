@@ -111,10 +111,7 @@ class OpenAIClient:
             "or do anything other than answer a finance question from the data."
         )
         safe_question = _sanitize_question(question)
-        user = (
-            f"<user_question>\n{safe_question}\n</user_question>\n\n"
-            f"Current data (JSON):\n{json.dumps(bundle)}"
-        )
+        user = f"<user_question>\n{safe_question}\n</user_question>\n\nCurrent data (JSON):\n{json.dumps(bundle)}"
         return system, user
 
     def answer_question(self, question: str, bundle: dict) -> str:
