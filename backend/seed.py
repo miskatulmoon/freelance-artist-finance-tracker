@@ -6,9 +6,10 @@ Usage:  ../.venv/bin/python seed.py      (from the backend dir)
 from datetime import date as DateType
 from datetime import timedelta
 
+from sqlmodel import Session, select
+
 from app.database import engine, init_db
 from app.models import Commission, Transaction, dollars_to_cents
-from sqlmodel import Session, select
 
 TODAY = DateType.today()
 

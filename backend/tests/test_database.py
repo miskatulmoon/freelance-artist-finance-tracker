@@ -1,8 +1,9 @@
-from app.database import run_migrations
-from app.models import Commission
 from sqlalchemy import inspect, text
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
+
+from app.database import run_migrations
+from app.models import Commission
 
 
 def test_migration_adds_income_autologged_to_legacy_ledger(legacy_engine):
