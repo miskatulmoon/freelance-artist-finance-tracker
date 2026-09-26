@@ -8,8 +8,9 @@ interface Message {
   text: string
 }
 
-const WELCOME =
-  "I'm the extra pencil on your desk. Ask me about your ledger — what Etsy cleared after fees, your effective rate, or where the next 30 days are heading."
+const WELCOME = 'Ask one question about your ledger. I will answer from your real numbers.'
+
+const SUGGESTIONS = ['How is my studio doing?', 'What is my hourly rate?', 'How much did Etsy make after fees?']
 
 export function AssistantWidget() {
   const [open, setOpen] = useState(false)
@@ -18,10 +19,13 @@ export function AssistantWidget() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const logRef = useRef<HTMLDivElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (open) logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
   }, [messages, open])
+
+  useEffect(() => () => abortRef.current?.abort(), [])
 
   const updateLastAssistant = (fn: (text: string) => string) =>
     setMessages((m) => {
@@ -32,41 +36,35 @@ export function AssistantWidget() {
       return next
     })
 
-  const dropEmptyAssistant = () =>
-    setMessages((m) => {
-      const last = m[m.length - 1]
-      return last?.role === 'assistant' && last.text === '' ? m.slice(0, -1) : m
-    })
-
   const ask = async (question?: string) => {
     const q = (question ?? input).trim()
     if (!q || busy) return
+    const controller = new AbortController()
+    abortRef.current = controller
     setBusy(true)
     setError('')
-    setMessages((m) => [...m, { role: 'user', text: q }, { role: 'assistant', text: '' }])
+    setMessages((m) => [...m, { role: 'user', text: q }])
     setInput('')
     try {
-      await api.streamChat(q, (delta) => updateLastAssistant((t) => t + delta))
+      let started = false
+      await api.streamChat(
+        q,
+        (delta) => {
+          if (!started) {
+            started = true
+            setMessages((m) => [...m, { role: 'assistant', text: delta }])
+          } else {
+            updateLastAssistant((t) => t + delta)
+          }
+        },
+        controller.signal,
+      )
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to get an answer')
-      dropEmptyAssistant()
+      if (!controller.signal.aborted) {
+        setError(e instanceof Error ? e.message : 'Failed to get an answer')
+      }
     } finally {
-      setBusy(false)
-    }
-  }
-
-  const readTheStudio = async () => {
-    if (busy) return
-    setBusy(true)
-    setError('')
-    setMessages((m) => [...m, { role: 'user', text: 'Read me the state of the studio.' }, { role: 'assistant', text: '' }])
-    try {
-      const [i, c] = await Promise.all([api.getInsights(), api.getRadarNarrative()])
-      updateLastAssistant(() => `${i.insights}\n\n${c.narrative}`)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't pencil the note")
-      dropEmptyAssistant()
-    } finally {
+      abortRef.current = null
       setBusy(false)
     }
   }
@@ -75,6 +73,8 @@ export function AssistantWidget() {
     e.preventDefault()
     void ask()
   }
+
+  const stop = () => abortRef.current?.abort()
 
   const toggle = () => setOpen((v) => !v)
 
@@ -93,11 +93,10 @@ export function AssistantWidget() {
       {open && (
         <section className="a-panel" aria-label="Assistant">
           <header className="a-head">
-            <h2 className="a-title">
-              A note from
-              <br />
-              your assistant
-            </h2>
+            <div>
+              <h2 className="a-title">Ask about your ledger</h2>
+              <p className="a-subtitle">Plain answers from your real numbers.</p>
+            </div>
             <button type="button" className="a-min" aria-label="Minimize the assistant" onClick={toggle}>
               −
             </button>
@@ -105,37 +104,18 @@ export function AssistantWidget() {
 
           <div className="chat-log a-log" ref={logRef} role="log" aria-live="polite">
             {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`chat-msg ${m.role}${m.role === 'assistant' ? ' note-reveal' : ''}`}
-                aria-busy={busy && i === messages.length - 1 && m.role === 'assistant'}
-              >
+              <div key={i} className={`chat-msg ${m.role}${m.role === 'assistant' ? ' note-reveal' : ''}`}>
                 {m.text}
               </div>
             ))}
-            {busy && messages[messages.length - 1]?.role === 'assistant' && messages[messages.length - 1].text === '' && (
-              <div className="chat-msg assistant loading">Penciling…</div>
-            )}
+            {busy && <div className="a-status">Thinking…</div>}
           </div>
 
           {error && <p className="error a-error">{error}</p>}
 
           <footer className="a-foot">
-            <button
-              type="button"
-              className="ghost a-note-btn"
-              onClick={() => void readTheStudio()}
-              disabled={busy}
-            >
-              Read me the state of the studio
-            </button>
-            <div className="text-dim a-hint">Try asking:</div>
             <div className="a-suggestions">
-              {[
-                'Which income source earned me the most?',
-                'What is my effective hourly rate and is it healthy?',
-                'How much have I paid in platform fees?',
-              ].map((s) => (
+              {SUGGESTIONS.map((s) => (
                 <button key={s} type="button" className="ghost" onClick={() => void ask(s)} disabled={busy}>
                   {s}
                 </button>
@@ -145,13 +125,19 @@ export function AssistantWidget() {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="e.g. How much did Etsy make after fees?"
+                placeholder="Type your question"
                 disabled={busy}
                 aria-label="Ask the assistant a question"
               />
-              <button className="btn" disabled={busy || !input.trim()}>
-                Ask
-              </button>
+              {busy ? (
+                <button type="button" className="btn a-stop" onClick={stop} aria-label="Stop the assistant response">
+                  Stop
+                </button>
+              ) : (
+                <button className="btn" disabled={!input.trim()}>
+                  Ask
+                </button>
+              )}
             </form>
           </footer>
         </section>

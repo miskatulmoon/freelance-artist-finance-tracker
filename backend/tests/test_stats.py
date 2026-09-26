@@ -11,6 +11,7 @@ from app.services.stats import (
     top_merchants,
     total_fees,
 )
+
 from tests.conftest import make_commission, make_tx
 
 

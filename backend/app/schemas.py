@@ -234,5 +234,8 @@ class CashflowInsightsResponse(SQLModel):
     narrative: str
 
 
+CHAT_QUESTION_MAX_LENGTH = 2000
+
+
 class ChatRequest(SQLModel):
-    question: str = Field(min_length=1)
+    question: str = Field(min_length=1, max_length=CHAT_QUESTION_MAX_LENGTH)

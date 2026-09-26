@@ -1,0 +1,17 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.9
+    hooks:
+      - id: ruff-check
+        args: [--config=backend/pyproject.toml]
+      - id: ruff-format
+        args: [--config=backend/pyproject.toml]
+
+  - repo: local
+    hooks:
+      - id: oxlint
+        name: oxlint
+        entry: npm --prefix frontend run lint --
+        language: system
+        files: ^frontend/.*\.(js|jsx|ts|tsx)$
+        pass_filenames: false

@@ -2,14 +2,13 @@ from collections.abc import Iterator
 from datetime import date, timedelta
 
 import pytest
+from app.database import get_session
+from app.main import app
+from app.services.llm import get_llm
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
-
-from app.database import get_session
-from app.main import app
-from app.services.llm import get_llm
 
 
 class FakeLLM:

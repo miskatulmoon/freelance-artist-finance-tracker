@@ -38,15 +38,14 @@ Key design choices:
 
 ```bash
 cd backend
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+uv sync --locked
 
 cp .env.example .env   # add your LLM_API_KEY
-python seed.py         # optional: load the demo dataset
-uvicorn app.main:app --reload   # applies Alembic migrations on startup
+uv run --locked python seed.py         # optional: load the demo dataset
+uv run --locked uvicorn app.main:app --reload   # applies Alembic migrations on startup
 ```
 
-Schema changes are versioned with **Alembic** (`backend/migrations/`); `init_db()` stamps the baseline on pre-Alembic ledgers and upgrades to head on every startup. To run migrations manually: `alembic upgrade head` from `backend/`.
+Python dependencies are resolved and pinned in `backend/uv.lock`; `requirements.txt` is an exact, generated pip-compatible export. Schema changes are versioned with **Alembic** (`backend/migrations/`); `init_db()` stamps the baseline on pre-Alembic ledgers and upgrades to head on every startup. To run migrations manually: `uv run --locked alembic upgrade head` from `backend/`.
 
 Open the auto-generated API docs at <http://localhost:8000/docs>.
 
@@ -54,7 +53,7 @@ Open the auto-generated API docs at <http://localhost:8000/docs>.
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev            # http://localhost:5173
 ```
 
@@ -64,13 +63,15 @@ Vite proxies `/api/*` to `localhost:8000`, so the two run together with zero con
 
 ```bash
 cd backend
-pytest                # 63 tests, offline (LLM mocked)
-ruff check . && ruff format --check .
+uv run --locked pytest                # offline (LLM mocked)
+uv run --locked ruff check . && uv run --locked ruff format --check .
 
 cd ../frontend
 npm test              # component tests
 npm run test:e2e      # Playwright smoke test
 ```
+
+Install the repository hooks once with `uv run --locked pre-commit install`; they run Ruff for Python files and Oxlint for the frontend.
 
 ## Feature tour
 

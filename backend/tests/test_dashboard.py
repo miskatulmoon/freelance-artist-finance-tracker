@@ -60,6 +60,11 @@ def test_chat_rejects_empty_question(client):
     assert client.post("/chat", json={"question": ""}).status_code == 422
 
 
+def test_chat_rejects_overlong_question(client):
+    assert client.post("/chat", json={"question": "x" * 2001}).status_code == 422
+    assert client.post("/chat/stream", json={"question": "x" * 2001}).status_code == 422
+
+
 def test_chat_stream_returns_sse_deltas(client, session):
     session.add(make_tx("income", 500.0, "commission", source="commission"))
     session.commit()

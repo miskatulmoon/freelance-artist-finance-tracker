@@ -55,11 +55,16 @@ export type Insights = Schemas['InsightsResponse']
 export type ChatAnswer = Schemas['ChatResponse']
 export type CashflowInsights = Schemas['CashflowInsightsResponse']
 
-export async function streamChat(question: string, onDelta: (text: string) => void): Promise<void> {
+export async function streamChat(
+  question: string,
+  onDelta: (text: string) => void,
+  signal?: AbortSignal,
+): Promise<void> {
   const res = await fetch(`${API_BASE}/chat/stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question }),
+    signal,
   })
   if (!res.ok) {
     let detail = res.statusText
