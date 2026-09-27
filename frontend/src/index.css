@@ -636,7 +636,8 @@ body::after {
   transition: color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
-.a-fab svg {
+.a-fab svg,
+.a-fab img {
   width: 20px;
   height: 20px;
 }

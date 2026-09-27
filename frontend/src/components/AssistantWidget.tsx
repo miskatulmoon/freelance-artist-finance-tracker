@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
-import { NibIcon } from './icons'
+import assistantIcon from '../assets/chat-round-money-svgrepo-com.svg'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -87,7 +87,7 @@ export function AssistantWidget() {
         aria-expanded={open}
         onClick={toggle}
       >
-        <NibIcon />
+        <img src={assistantIcon} alt="" aria-hidden="true" />
       </button>
 
       {open && (
