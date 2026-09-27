@@ -15,7 +15,7 @@ import {
 import { api } from '../api'
 import type { CashflowRadar, Summary } from '../api'
 import { fmtMonth, fmtMoney, statusClass } from '../format'
-import ledgerTexture from '../assets/wesley-tingey-XvlbhiTzfWA-unsplash.jpg'
+
 
 const SOURCE_COLORS: Record<string, string> = {
   commission: '#a84b2f',
@@ -290,31 +290,18 @@ export function Dashboard() {
 
       <div className="grid cols-2">
         <div className="card">
-          <h3>
-            <span className="card-head-dot">
-              <span className="pigment-dot" style={{ background: 'var(--pig-commission)' }} />
-              Effective rate
-            </span>
-          </h3>
+          <h3>Effective rate</h3>
           <div className="big">{summary.hourly_rate ? fmtMoney(summary.hourly_rate) : '—'}</div>
           <div className="hint">per hour across commissions</div>
         </div>
         <div className="card">
-          <h3>
-            <span className="card-head-dot">
-              <span className="pigment-dot" style={{ background: 'var(--pig-spend)' }} />
-              Platform fees paid
-            </span>
-          </h3>
+          <h3>Platform fees paid</h3>
           <div className="big">{fmtMoney(summary.total_fees)}</div>
           <div className="hint">Etsy, payment processors</div>
         </div>
       </div>
 
-      <div className="dashboard-art" aria-hidden="true">
-        <img src={ledgerTexture} alt="" />
-        <span>your studio, in colour</span>
-      </div>
+
 
       <div className="grid cols-2">
         <div className="card">
@@ -382,7 +369,6 @@ export function Dashboard() {
           {summary.top_merchants.map((m, i) => (
             <div key={m.merchant} className="text-dim">
               <span style={{ fontSize: 11 }}>
-                <span className="pigment-dot" style={{ background: 'var(--pig-other)', marginRight: 5 }} />
                 #{i + 1} {m.merchant}
               </span>
               <div className="money" style={{ color: 'var(--ink)', fontSize: 18 }}>{fmtMoney(m.total)}</div>

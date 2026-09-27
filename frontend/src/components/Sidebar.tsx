@@ -1,5 +1,5 @@
 import { BrushIcon, LedgerIcon, SlipsIcon } from './icons'
-import sllogo from '../assets/sllogo.png'
+import sllogo from '../assets/new_sl_logo.png'
 
 export type Section = 'ledger' | 'slips' | 'commissions'
 
@@ -14,13 +14,6 @@ const SUBTITLES: Record<Section, string> = {
   slips: 'income & expenses, one line apiece',
   commissions: 'each piece, from agreed to paid',
 }
-
-const PIGMENTS: { label: string; color: string }[] = [
-  { label: 'commission', color: 'var(--pig-commission)' },
-  { label: 'etsy', color: 'var(--pig-etsy)' },
-  { label: 'patreon', color: 'var(--pig-patreon)' },
-  { label: 'other', color: 'var(--pig-other)' },
-]
 
 export function NavItems({
   section,
@@ -74,11 +67,6 @@ export function Sidebar({ section, onChange }: { section: Section; onChange: (s:
       <nav className="side-nav" aria-label="Ledger sections">
         <NavItems section={section} onChange={onChange} vertical />
       </nav>
-      <footer className="side-foot" aria-hidden="true">
-        {PIGMENTS.map((p) => (
-          <span key={p.label} className="pigment-dot" style={{ background: p.color }} />
-        ))}
-      </footer>
     </aside>
   )
 }

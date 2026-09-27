@@ -36,6 +36,17 @@ export function BrushIcon() {
   )
 }
 
+export function ForecastIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 19.5h16" />
+      <path d="M4 19.5V5" />
+      <path d="M6.5 15.5l3.5-4 3 2.5 4.5-6" />
+      <path d="M15.5 8h2v2" />
+    </svg>
+  )
+}
+
 export function NibIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

@@ -121,34 +121,19 @@ export function Commissions() {
       {summary && rows.length > 0 && (
         <div className="grid cols-3">
           <div className="card">
-            <h3>
-              <span className="card-head-dot">
-                <span className="pigment-dot" style={{ background: 'var(--pig-spend)' }} />
-                Expected income
-              </span>
-            </h3>
+            <h3>Expected income</h3>
             <div className="big">{fmtMoney(summary.expected_income)}</div>
             <div className="hint">
               {activeCount} {activeCount === 1 ? 'piece' : 'pieces'} {SUMMARY_HINTS.expected}
             </div>
           </div>
           <div className="card">
-            <h3>
-              <span className="card-head-dot">
-                <span className="pigment-dot" style={{ background: 'var(--pig-other)' }} />
-                Earned income
-              </span>
-            </h3>
+            <h3>Earned income</h3>
             <div className="big">{fmtMoney(summary.earned_income)}</div>
             <div className="hint">{SUMMARY_HINTS.earned}</div>
           </div>
           <div className="card">
-            <h3>
-              <span className="card-head-dot">
-                <span className="pigment-dot" style={{ background: 'var(--pig-commission)' }} />
-                Lost income
-              </span>
-            </h3>
+            <h3>Lost income</h3>
             <div className="big">{fmtMoney(summary.lost_income)}</div>
             <div className="hint">{SUMMARY_HINTS.lost}</div>
           </div>
@@ -334,7 +319,7 @@ export function Commissions() {
           <h2 className="why-title">Why this matters</h2>
           <p className="why-copy">
             Your effective rate is paid income ÷ hours worked. If a <i>{fmtMoney(500)}</i> portrait took{' '}
-            <strong>20 h</strong>, that's <strong>{fmtMoney(25)}/hr</strong> — probably below minimum wage.
+            <strong>20 h</strong>, that's <strong>{fmtMoney(25)}/hr</strong> — probably near minimum wage.
             Comparing pieces this way is the fastest way to see which work is worth pricing higher.
           </p>
         </div>

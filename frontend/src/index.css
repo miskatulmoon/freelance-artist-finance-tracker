@@ -110,9 +110,9 @@ body::after {
   width: 44px;
   height: 44px;
   border-radius: 11px;
-  background: var(--paper-vivid);
-  border: 1px solid var(--rule);
-  box-shadow: var(--shadow-lift);
+  background: transparent;
+  border: none;
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -144,7 +144,7 @@ body::after {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--paper-inset);
+  background: #eeede9;
   border-right: 1px solid var(--rule);
   padding: 20px 12px 16px;
 }
@@ -158,9 +158,14 @@ body::after {
 }
 
 .side-brand .brand-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+}
+
+.side-brand .brand-mark img {
+  width: 84px;
+  height: 84px;
 }
 
 .side-brand h1 {
@@ -225,19 +230,6 @@ body::after {
   font-weight: 500;
 }
 
-.side-foot {
-  margin-top: auto;
-  display: flex;
-  gap: 7px;
-  padding: 14px 12px 0;
-  border-top: 1px solid var(--rule);
-}
-
-.side-foot .pigment-dot {
-  width: 8px;
-  height: 8px;
-}
-
 /* ----------------------------- content head ----------------------------- */
 
 .content-head {
@@ -281,7 +273,8 @@ body::after {
   align-items: center;
   justify-content: center;
   padding: 26px;
-  background: var(--paper);
+  background: #eeede9;
+  overflow: hidden;
 }
 
 .landing-art-stack {
@@ -295,34 +288,148 @@ body::after {
 
 .landing-art {
   position: absolute;
-  width: min(24vw, 300px);
+  width: min(22vw, 260px);
   aspect-ratio: 4 / 5;
-  border: 10px solid var(--paper-vivid);
-  box-shadow: var(--shadow-lift);
+  background: var(--paper-vivid);
+  padding: 10px 10px 38px;
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgba(36, 30, 22, 0.08),
+    0 8px 24px rgba(36, 30, 22, 0.14);
   overflow: hidden;
+  animation: landing-float 7s ease-in-out infinite;
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -10px;
+  }
 }
 
 .landing-art-primary {
-  top: 0;
-  left: 0;
-  transform: rotate(-3deg);
+  top: -35%;
+  left: -20%;
+  transform: rotate(-6deg);
+  animation-duration: 7.5s;
+}
+
+.landing-art-secondary {
+  animation-duration: 8.5s;
+  animation-delay: -2s;
+}
+
+.landing-art-tertiary {
+  animation-duration: 6.5s;
+  animation-delay: -1s;
+}
+
+.landing-art-quaternary {
+  animation-duration: 9s;
+  animation-delay: -3.5s;
+}
+
+.landing-art-quinary {
+  animation-duration: 7s;
+  animation-delay: -4.5s;
+}
+
+.landing-art-senary {
+  animation-duration: 8s;
+  animation-delay: -2.8s;
+}
+
+.landing-art-septenary {
+  animation-duration: 6.8s;
+  animation-delay: -1.6s;
+}
+
+.landing-art-octonary {
+  animation-duration: 9.5s;
+  animation-delay: -5s;
+}
+
+.landing-art-nonary {
+  animation-duration: 7.2s;
+  animation-delay: -3s;
+}
+
+.landing-art-denary {
+  animation-duration: 8.8s;
+  animation-delay: -0.8s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-art {
+    animation: none;
+  }
 }
 
 .landing-art-secondary {
   left: auto;
-  right: 0;
+  right: -25%;
   top: auto;
-  bottom: auto;
-  bottom: 0;
-  transform: rotate(4deg);
+  bottom: -16%;
+  transform: rotate(5deg);
 }
 
-.landing-art-stack .landing-art::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(150deg, rgba(36, 30, 22, 0.04), rgba(168, 75, 47, 0.22));
-  mix-blend-mode: multiply;
+.landing-art-tertiary {
+  top: -12%;
+  right: 5%;
+  width: min(19vw, 220px);
+  transform: rotate(3deg);
+}
+
+.landing-art-quaternary {
+  bottom: -35%;
+  left: -4%;
+  width: min(18vw, 210px);
+  transform: rotate(-4deg);
+}
+
+.landing-art-quinary {
+  top: 36%;
+  left: -20%;
+  width: min(18vw, 210px);
+  transform: rotate(7deg);
+}
+
+.landing-art-senary {
+  top: 22%;
+  right: -13%;
+  width: min(18vw, 210px);
+  transform: rotate(-4deg);
+}
+
+.landing-art-septenary {
+  top: -22%;
+  left: 18%;
+  width: min(17vw, 200px);
+  transform: rotate(5deg);
+}
+
+.landing-art-octonary {
+  top: -40%;
+  right: -20%;
+  width: min(19vw, 225px);
+  transform: rotate(-6deg);
+}
+
+.landing-art-nonary {
+  bottom: 30%;
+  left: -4%;
+  width: min(16vw, 190px);
+  transform: rotate(6deg);
+}
+
+.landing-art-denary {
+  bottom: -24%;
+  right: -2%;
+  width: min(17vw, 200px);
+  transform: rotate(-3deg);
 }
 
 .landing-art img {
@@ -330,21 +437,20 @@ body::after {
   height: 100%;
   display: block;
   object-fit: cover;
+  border-radius: 8px;
 }
 
 .landing-art span {
   position: absolute;
-  right: 12px;
-  bottom: 10px;
+  left: 0;
+  right: 0;
+  bottom: 8px;
   z-index: 1;
-  color: var(--paper-vivid);
+  text-align: center;
+  color: var(--ink-soft);
   font-family: var(--font-hand);
-  font-size: 18px;
-  transform: rotate(-4deg);
-}
-
-.landing-art-secondary span {
-  transform: rotate(4deg);
+  font-size: 17px;
+  line-height: 1.1;
 }
 
 .landing-art-stack + .landing-core {
@@ -394,17 +500,20 @@ body::after {
   color: var(--paper-vivid);
   font-family: var(--font-display);
   font-size: 18px;
-  font-style: italic;
-  transform: translateY(-50%);
+  font-style: normal;
+  font-weight: 500;
+  width: 108px;
+  height: 108px;
+  border-radius: 24;
 }
 
 .landing-mark {
   width: 68px;
   height: 68px;
   border-radius: 16px;
-  background: var(--paper-vivid);
-  border: 1px solid var(--rule);
-  box-shadow: var(--shadow-lift);
+  background: transparent;
+  border: none;
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -413,8 +522,8 @@ body::after {
 
 .landing-mark img {
   display: block;
-  width: 52px;
-  height: 52px;
+  width: 88px;
+  height: 88px;
   object-fit: contain;
 }
 
@@ -455,21 +564,49 @@ body::after {
 
 .landing-feats {
   display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  max-width: 480px;
+  gap: 14px;
+  align-items: stretch;
+  max-width: 560px;
 }
 
 .landing-feat {
   flex: 1;
   text-align: center;
+  background: var(--paper-vivid);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 16px 14px 14px;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.landing-feat:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+}
+
+.landing-feat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--pig-spend);
+  margin-bottom: 10px;
+}
+
+.landing-feat-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .landing-feat-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--ink-soft);
-  margin-bottom: 3px;
+  color: var(--ink);
+  margin-bottom: 4px;
 }
 
 .landing-feat-desc {
@@ -672,6 +809,11 @@ body::after {
   .landing-art {
     width: min(30vw, 280px);
   }
+
+  .landing-art-quinary,
+  .landing-art-senary {
+    display: none;
+  }
 }
 
 @media (max-width: 560px) {
@@ -718,20 +860,6 @@ body::after {
   color: var(--graphite);
   font-size: 12px;
   margin-top: 6px;
-}
-
-.card-head-dot {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.pigment-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  display: inline-block;
-  flex: none;
 }
 
 .stat-positive {
@@ -1016,10 +1144,15 @@ body::after {
 /* ----------------------------- why-note card ----------------------------- */
 
 .why-note {
-  background: var(--wash-etsy);
+  position: relative;
+  background:
+    linear-gradient(rgba(246, 242, 236, 0.88), rgba(246, 242, 236, 0.88)),
+    url('./assets/pexels-aksioart-9348440.jpg') center / cover no-repeat,
+    var(--wash-etsy);
   border: 1px solid rgba(168, 131, 58, 0.15);
   border-radius: 6px;
   padding: 20px 24px;
+  overflow: hidden;
 }
 
 .why-title {
