@@ -2,13 +2,36 @@ import { expect, test } from '@playwright/test'
 
 test('commission agreed → completed autologs income', async ({ page }) => {
   let commissions: any[] = [
-    { id: 1, title: 'Portrait', client: 'Acme', price: 500, hours: 5, due_date: '2025-12-01', status: 'agreed' }
+    {
+      id: 1,
+      piece: 'Portrait',
+      client: 'Acme',
+      amount: 500,
+      hours_spent: 5,
+      expected_date: '2025-12-01',
+      status: 'agreed',
+      transaction_id: null,
+      income_autologged: false,
+      effective_rate: 100,
+    },
   ]
   let transactions: any[] = []
 
   await page.route('**/api/commissions**', async (route) => {
     const req = route.request()
     if (req.method() === 'GET') {
+      if (new URL(req.url()).pathname.endsWith('/summary')) {
+        await route.fulfill({
+          json: {
+            expected_income: 500,
+            earned_income: 0,
+            lost_income: 0,
+            counts: { agreed: 1, in_progress: 0, completed: 0, cancelled: 0 },
+            active_count: 1,
+          },
+        })
+        return
+      }
       await route.fulfill({ json: { items: commissions, total: commissions.length, limit: 100, offset: 0 } })
       return
     }
@@ -22,9 +45,9 @@ test('commission agreed → completed autologs income', async ({ page }) => {
           transactions.push({
             id: 100 + id,
             type: 'income',
-            amount: commissions[idx].price,
-            net_amount: commissions[idx].price,
-            description: `Commission completed: ${commissions[idx].title}`,
+            amount: commissions[idx].amount,
+            net_amount: commissions[idx].amount,
+            description: `Commission completed: ${commissions[idx].piece}`,
             date: new Date().toISOString().slice(0,10),
             fee_amount: null,
             source: 'commission',
@@ -53,17 +76,16 @@ test('commission agreed → completed autologs income', async ({ page }) => {
   await page.getByRole('button', { name: 'Open your ledger' }).click()
   await page.getByRole('button', { name: 'Commissions' }).click()
 
-  await expect(page.getByRole('heading', { name: 'Commissions' })).toBeVisible()
-  await expect(page.getByText('Portrait')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Commissions', exact: true })).toBeVisible()
+  await expect(page.getByRole('cell', { name: 'Portrait', exact: true })).toBeVisible()
 
   // Change status to completed
-  const statusControl = page.locator('[data-testid="commission-status-1"]')
-  await statusControl.click()
-  await page.getByRole('option', { name: 'completed' }).click()
+  const statusControl = page.getByLabel('Progress for Acme — Portrait')
+  await statusControl.selectOption('completed')
 
   // Verify autologged income appears in Slips
   await page.getByRole('button', { name: 'Slips' }).click()
-  await expect(page.getByRole('heading', { name: 'Slips' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Slips', exact: true })).toBeVisible()
   await expect(page.getByText('Commission completed: Portrait')).toBeVisible()
-  await expect(page.getByText('$500.00')).toBeVisible()
+  await expect(page.getByText('$500.00').first()).toBeVisible()
 })
