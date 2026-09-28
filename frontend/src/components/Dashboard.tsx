@@ -42,6 +42,21 @@ export function Dashboard() {
     )
   }
 
+  const isEmpty = Object.keys(summary.per_source_net).length === 0 && summary.monthly_trend.length === 0 && summary.top_merchants.length === 0
+
+  if (isEmpty) {
+    return (
+      <div className="stack">
+        <div className="card">
+          <h3>Your ledger is empty</h3>
+          <p className="hint">Add a transaction or a commission to see cash-flow forecasts, rates, and trends.</p>
+        </div>
+        <CashRunway />
+        <TrendCharts />
+      </div>
+    )
+  }
+
   return (
     <div className="stack">
       <CashRunway />

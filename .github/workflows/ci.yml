@@ -31,6 +31,17 @@ jobs:
       - name: Pytest
         run: uv run --locked pytest -q
 
+      - name: Test with coverage
+        run: uv run --locked pytest --cov=app --cov-report=xml --cov-fail-under=80
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: backend/coverage.xml
+          flags: backend
+          fail_ci_if_error: true
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -56,6 +67,17 @@ jobs:
 
       - name: Unit tests
         run: npm test
+
+      - name: Unit tests with coverage
+        run: npm run test -- --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: frontend/coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: true
 
       - name: Vite build
         run: npm run build
