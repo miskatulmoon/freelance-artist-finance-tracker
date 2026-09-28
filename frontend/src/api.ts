@@ -89,11 +89,22 @@ export async function streamChat(
   onDelta: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<void> {
+  const controller = new AbortController()
+  const combinedSignal = signal
+    ? (() => {
+        if (typeof AbortSignal !== 'undefined' && 'any' in AbortSignal) {
+          return AbortSignal.any([signal, controller.signal])
+        }
+        signal.addEventListener('abort', () => controller.abort())
+        return controller.signal
+      })()
+    : controller.signal
+
   const res = await fetch(`${API_BASE}/chat/stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question }),
-    signal,
+    signal: combinedSignal,
   })
   if (!res.ok) {
     let detail = res.statusText
@@ -109,24 +120,40 @@ export async function streamChat(
   if (!reader) throw new Error('Streaming is not supported in this browser')
   const decoder = new TextDecoder()
   let buffer = ''
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) return
-    buffer += decoder.decode(value, { stream: true })
-    const events = buffer.split('\n\n')
-    buffer = events.pop() ?? ''
-    for (const event of events) {
-      const line = event.trim()
-      if (!line.startsWith('data: ')) continue
-      const data = line.slice(6)
-      if (data === '[DONE]') return
-      try {
-        const payload = JSON.parse(data) as { delta?: string }
-        if (payload.delta) onDelta(payload.delta)
-      } catch {
-        /* ignore malformed chunk */
+  const HEARTBEAT_MS = 30000
+  let lastSeen = Date.now()
+  const heartbeat = setInterval(() => {
+    if (Date.now() - lastSeen > HEARTBEAT_MS) {
+      controller.abort()
+    }
+  }, 5000)
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) return
+      lastSeen = Date.now()
+      buffer += decoder.decode(value, { stream: true })
+      const events = buffer.split('\n\n')
+      buffer = events.pop() ?? ''
+      for (const event of events) {
+        const line = event.trim()
+        if (!line.startsWith('data: ')) continue
+        const data = line.slice(6)
+        if (data === '[DONE]') return
+        try {
+          const payload = JSON.parse(data) as { delta?: string }
+          if (payload.delta) {
+            lastSeen = Date.now()
+            onDelta(payload.delta)
+          }
+        } catch {
+          /* ignore malformed chunk */
+        }
       }
     }
+  } finally {
+    clearInterval(heartbeat)
   }
 }
 

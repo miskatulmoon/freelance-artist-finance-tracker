@@ -60,6 +60,9 @@ jobs:
       - name: Vite build
         run: npm run build
 
+      - name: Bundle size check
+        run: npm run bundlesize
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
