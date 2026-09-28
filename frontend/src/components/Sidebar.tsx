@@ -52,7 +52,7 @@ export function NavItems({
   return <>{items}</>
 }
 
-export function Sidebar({ section, onChange }: { section: Section; onChange: (s: Section) => void }) {
+export function Sidebar({ section, onChange, onBack }: { section: Section; onChange: (s: Section) => void; onBack?: () => void }) {
   return (
     <aside className="side">
       <header className="side-brand">
@@ -67,6 +67,11 @@ export function Sidebar({ section, onChange }: { section: Section; onChange: (s:
       <nav className="side-nav" aria-label="Ledger sections">
         <NavItems section={section} onChange={onChange} vertical />
       </nav>
+      {onBack && (
+        <button type="button" className="side-item" onClick={onBack} style={{ marginTop: 'auto' }}>
+          <span>Back to landing</span>
+        </button>
+      )}
     </aside>
   )
 }

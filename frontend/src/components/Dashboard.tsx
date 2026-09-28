@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -12,8 +12,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
-import type { CashflowRadar, Summary } from '../api'
+import type { CashflowRadar } from '../api'
 import { fmtMonth, fmtMoney, statusClass } from '../format'
 
 
@@ -41,8 +42,8 @@ const WASH = {
 } as const
 
 const TOOLTIP_STYLE = {
-  background: '#f6f2ec',
-  border: '1px solid #d4c9b8',
+  background: '#f8fafc',
+  border: '1px solid #d9e2ec',
   borderRadius: 4,
   color: '#241e16',
   fontFamily: "'DM Sans', sans-serif",
@@ -97,28 +98,24 @@ function fmtDay(iso: string): string {
 }
 
 function useDashboard() {
-  const [summary, setSummary] = useState<Summary | null>(null)
-  const [radar, setRadar] = useState<CashflowRadar | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const query = useQuery({
+    queryKey: ['dashboard', 'summary', 'radar'],
+    queryFn: async () => {
+      const [summary, radar] = await Promise.all([api.getSummary(), api.getRadar()])
+      return { summary, radar }
+    },
+    staleTime: 1000 * 60 * 5,
+    retry: 2,
+  })
 
-  const load = async () => {
-    try {
-      const [s, r] = await Promise.all([api.getSummary(), api.getRadar()])
-      setSummary(s)
-      setRadar(r)
-      setError('')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load ledger')
-    } finally {
-      setLoading(false)
-    }
+  return {
+    summary: query.data?.summary ?? null,
+    radar: query.data?.radar ?? null,
+    loading: query.isPending,
+    error: query.error?.message ?? '',
+    isError: query.isError,
+    reload: query.refetch,
   }
-
-  useEffect(() => {
-    void load()
-  }, [])
-  return { summary, radar, loading, error, reload: load }
 }
 
 function DashboardSkeleton() {
@@ -149,11 +146,18 @@ function DashboardSkeleton() {
 }
 
 export function Dashboard() {
-  const { summary, radar, loading, error } = useDashboard()
+  const { summary, radar, loading, error, isError, reload } = useDashboard()
   const [heroHover, setHeroHover] = useState(false)
 
   if (loading) return <DashboardSkeleton />
-  if (error || !summary || !radar) return <div className="error">{error || 'No data'}</div>
+  if (isError || !summary || !radar) {
+    return (
+      <div className="error" role="alert">
+        <p>{error || 'No data'}</p>
+        <button onClick={() => reload()} type="button">Retry</button>
+      </div>
+    )
+  }
 
   const sources = Object.entries(summary.per_source_net).map(([name, net]) => ({
     name: name.replace('_', ' '),
@@ -266,12 +270,12 @@ export function Dashboard() {
                   formatter={(value) => [fmtMoney(Number(value)), 'Balance']}
                   contentStyle={TOOLTIP_STYLE}
                   labelStyle={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: '0.06em', color: '#6f6350' }}
-                  cursor={{ stroke: '#d4c9b8', strokeDasharray: '3 3', strokeWidth: 1 }}
+                  cursor={{ stroke: '#d9e2ec', strokeDasharray: '3 3', strokeWidth: 1 }}
                 />
-                {min < 0 && <ReferenceLine y={0} stroke="#d4c9b8" strokeDasharray="4 4" strokeWidth={1} />}
+                {min < 0 && <ReferenceLine y={0} stroke="#d9e2ec" strokeDasharray="4 4" strokeWidth={1} />}
                 <Area type="monotone" dataKey="balance" stroke={levelColor} strokeWidth={1.5} fill="url(#run-wash)" />
-                <ReferenceDot x={0} y={vals[0]} r={3.5} fill="#241e16" stroke="#f6f2ec" strokeWidth={1.5} />
-                <ReferenceDot x={30} y={vals[vals.length - 1]} r={3.5} fill={levelColor} stroke="#f6f2ec" strokeWidth={1.5} />
+                <ReferenceDot x={0} y={vals[0]} r={3.5} fill="#241e16" stroke="#f8fafc" strokeWidth={1.5} />
+                <ReferenceDot x={30} y={vals[vals.length - 1]} r={3.5} fill={levelColor} stroke="#f8fafc" strokeWidth={1.5} />
               </AreaChart>
             </ResponsiveContainer>
             <div className="hero-legend" aria-hidden="true">
@@ -314,7 +318,7 @@ export function Dashboard() {
                 formatter={(v) => [fmtMoney(Number(v)), 'Net']}
                 contentStyle={TOOLTIP_STYLE}
                 labelStyle={{ fontWeight: 600 }}
-                cursor={{ fill: '#e0d9ce' }}
+                cursor={{ fill: '#eef3f8' }}
               />
               <WashDefs />
               <Bar dataKey="net" radius={[2, 2, 0, 0]}>
@@ -342,7 +346,7 @@ export function Dashboard() {
                 formatter={(v, n) => [fmtMoney(Number(v)), String(n)]}
                 contentStyle={TOOLTIP_STYLE}
                 labelStyle={{ fontWeight: 600 }}
-                cursor={{ fill: '#e0d9ce' }}
+                cursor={{ fill: '#eef3f8' }}
               />
               <WashDefs />
               <Bar dataKey="income" fill="url(#wash-income)" radius={[2, 2, 0, 0]} />

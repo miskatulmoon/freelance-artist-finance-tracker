@@ -1,10 +1,10 @@
 :root {
   color-scheme: light;
 
-  /* parchment & clay — daylight studio desk */
-  --paper: #ede8df;
-  --paper-vivid: #f6f2ec;
-  --paper-inset: #e0d9ce;
+  /* cool grey — daylight studio desk */
+  --paper: #f3f6f9;
+  --paper-vivid: #f8fafc;
+  --paper-inset: #eef3f8;
 
   /* ink */
   --ink: #241e16;
@@ -12,8 +12,8 @@
   --graphite: #6f6350;
 
   /* ruled paper */
-  --hairline: #e8e0d4;
-  --rule: #d4c9b8;
+  --hairline: #e2e8f0;
+  --rule: #d9e2ec;
 
   /* pigments — clay, ochre, mauve, sage, slate; ink-blocked text kept ≥4.5:1 */
   --pig-commission: #a84b2f;
@@ -144,7 +144,7 @@ body::after {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #eeede9;
+  background: var(--paper);
   border-right: 1px solid var(--rule);
   padding: 20px 12px 16px;
 }
@@ -273,7 +273,7 @@ body::after {
   align-items: center;
   justify-content: center;
   padding: 26px;
-  background: #eeede9;
+  background: var(--paper);
   overflow: hidden;
 }
 
