@@ -30,4 +30,6 @@ def test_openapi_matches_exported_file(client):
         d.pop("servers", None)
         return d
 
-    assert normalize(live_schema) == normalize(exported_schema), "Live OpenAPI schema differs from exported openapi.json"
+    assert normalize(live_schema) == normalize(exported_schema), (
+        "Live OpenAPI schema differs from exported openapi.json"
+    )
