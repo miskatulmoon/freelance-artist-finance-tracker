@@ -683,6 +683,22 @@
           }
         }
       }
+    },
+    "/health/detailed": {
+      "get": {
+        "summary": "Health Detailed",
+        "operationId": "health_detailed_health_detailed_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

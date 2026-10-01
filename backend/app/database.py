@@ -3,17 +3,20 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
+from fastapi import Depends, Request
 from sqlalchemy import inspect
+from sqlalchemy.engine import Engine
 from sqlmodel import Session, create_engine
-
-from app.config import get_settings
-
-connect_args = {"check_same_thread": False} if "sqlite" in get_settings().database_url else {}
-engine = create_engine(get_settings().database_url, connect_args=connect_args)
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 BASELINE_REVISION = "0001"
 HEAD_REVISION = "0003"
+
+
+def create_engine_from_settings(settings) -> Engine:
+    database_url = settings.database_url
+    connect_args = {"check_same_thread": False} if "sqlite" in database_url else {}
+    return create_engine(database_url, connect_args=connect_args)
 
 
 def _alembic_config() -> Config:
@@ -41,10 +44,14 @@ def run_migrations(target_engine) -> None:
         command.upgrade(config, HEAD_REVISION)
 
 
-def init_db() -> None:
+def init_db(engine: Engine) -> None:
     run_migrations(engine)
 
 
-def get_session() -> Generator[Session, None, None]:
+def get_engine(request: Request) -> Engine:
+    return request.app.state.engine
+
+
+def get_session(engine: Engine = Depends(get_engine)) -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session

@@ -1,10 +1,12 @@
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
+from app.config import get_settings
 from app.database import get_session
+from app.dependencies import limiter, require_api_key
 from app.schemas import (
     CashflowInsightsResponse,
     CashflowRadarRead,
@@ -26,6 +28,10 @@ from app.services.stats import (
 )
 
 router = APIRouter(tags=["dashboard"])
+
+_settings = get_settings()
+limit_per_min = _settings.chat_rate_limit_per_minute
+_chat_limit = f"{limit_per_min}/minute" if limit_per_min > 0 else "1000/second"
 
 
 @router.get("/dashboard/summary", response_model=DashboardSummary)
@@ -57,16 +63,39 @@ def cashflow_insights(session: Session = Depends(get_session), llm: LLMClient = 
 
 
 @router.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest, session: Session = Depends(get_session), llm: LLMClient = Depends(get_llm)):
-    return {"answer": llm.answer_question(request.question, context_bundle(session))}
+@limiter.limit(_chat_limit)
+def chat(
+    request: Request,
+    chat_req: ChatRequest,
+    session: Session = Depends(get_session),
+    llm: LLMClient = Depends(get_llm),
+    _auth=Depends(require_api_key),
+):
+    # Enforce max length beyond Pydantic: check stripped length and settings
+    settings = get_settings()
+    max_len = settings.chat_max_length
+    if len(chat_req.question.strip()) > max_len:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Question too long")
+    return {"answer": llm.answer_question(chat_req.question, context_bundle(session))}
 
 
 @router.post("/chat/stream")
-def chat_stream(request: ChatRequest, session: Session = Depends(get_session), llm: LLMClient = Depends(get_llm)):
+@limiter.limit(_chat_limit)
+def chat_stream(
+    request: Request,
+    chat_req: ChatRequest,
+    session: Session = Depends(get_session),
+    llm: LLMClient = Depends(get_llm),
+    _auth=Depends(require_api_key),
+):
+    settings = get_settings()
+    max_len = settings.chat_max_length
+    if len(chat_req.question.strip()) > max_len:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Question too long")
     bundle = context_bundle(session)
 
     def event_stream():
-        for chunk in llm.stream_answer_question(request.question, bundle):
+        for chunk in llm.stream_answer_question(chat_req.question, bundle):
             yield f"data: {json.dumps({'delta': chunk})}\n\n"
         yield "data: [DONE]\n\n"
 

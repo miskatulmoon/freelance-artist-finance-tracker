@@ -8,7 +8,8 @@ from datetime import timedelta
 
 from sqlmodel import Session, select
 
-from app.database import engine, init_db
+from app.config import get_settings
+from app.database import create_engine_from_settings, init_db
 from app.models import Commission, Transaction, dollars_to_cents
 
 TODAY = DateType.today()
@@ -58,7 +59,9 @@ PENDING_COMMISSIONS = [
 
 
 def seed() -> None:
-    init_db()
+    settings = get_settings()
+    engine = create_engine_from_settings(settings)
+    init_db(engine)
     with Session(engine) as session:
         existing = session.exec(select(Transaction)).first()
         if existing is not None:
