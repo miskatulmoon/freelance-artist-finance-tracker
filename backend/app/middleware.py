@@ -6,6 +6,7 @@ from starlette.requests import Request
 
 logger = logging.getLogger(__name__)
 
+
 class RequestIDMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
         super().__init__(app)

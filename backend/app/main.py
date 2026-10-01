@@ -73,6 +73,7 @@ def health_detailed(request: Request):
     if settings.llm_api_key:
         try:
             from openai import OpenAI
+
             client = OpenAI(
                 api_key=settings.llm_api_key,
                 base_url=settings.llm_base_url,
