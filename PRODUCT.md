@@ -29,7 +29,10 @@ The artist logs a commission when it is agreed (client, piece, price, hours), re
 - Commission tracker: agreed terms (client, price, hours, due date) lock at logging; only progress updates afterwards. Completing a piece writes its income slip into the ledger automatically — reopening or cancelling retracts it — and expected / earned / lost income are tallied by status.
 - Commissions with hours → effective $/hr per piece and across the studio.
 - Cash-flow radar: committed income vs. 30-day burn, with healthy/moderate/low flag.
-- AI chat answers questions strictly from computed figures.
+- AI chat answers questions strictly from computed figures; streaming responses via Server-Sent Events with rate limiting, optional API-key protection, question sanitization, and abort support.
+- Paginated, filterable, sortable transaction and commission lists with limit/offset, stable ordering, and envelope metadata.
+- Health endpoints expose DB ping and LLM reachability; commissions support optional manual transaction linking (one-to-one unique) with autologged income retraction; database indexes accelerate stats aggregations.
+- Frontend uses TanStack Query for data fetching with caching and retries, empty-state handling, accessibility tests, and dedicated CashRunway and TrendCharts components.
 - Single-user, no auth; SQLite; seeded demo dataset via `backend/seed.py`; 57 offline tests with a mocked LLM; Vite proxies `/api` to FastAPI on :8000.
 - Frontend: React 19 + Vite + Recharts; backend: FastAPI + SQLModel.
 
