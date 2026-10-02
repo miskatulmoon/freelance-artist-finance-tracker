@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import type { Category, Source, Transaction, TransactionCreate } from '../api'
 import { fmtMoney, todayISO } from '../format'
@@ -78,6 +78,8 @@ export function Transactions() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [importSummary, setImportSummary] = useState<{created:number; skipped:number; errors:number} | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const loadMonth = async (month: string, append = false, existing: Transaction[] = []) => {
     if (append) setLoadingMore(true)
@@ -145,13 +147,60 @@ export function Transactions() {
     }
   }
 
+  const exportCsv = async () => {
+    try {
+      setError('')
+      const blob = await api.exportTransactions({
+        from_date: `${selectedMonth}-01`,
+        to_date: lastDayOfMonth(selectedMonth),
+        sort: 'date_desc',
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `transactions-${selectedMonth}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Export failed')
+    }
+  }
+
+  const triggerImport = () => fileInputRef.current?.click()
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      setError('')
+      setSubmitting(true)
+      const summary = await api.importTransactions(file)
+      setImportSummary({ created: summary.created, skipped: summary.skipped, errors: summary.errors.length })
+      await loadMonth(selectedMonth)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Import failed')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const activeMonth = selectedMonth
   const visibleRows = rows
 
   return (
     <div className="stack">
       <form className="card" onSubmit={submit}>
-        <h3>Log a slip</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+          <h3>Log a slip</h3>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" className="btn-ghost" onClick={triggerImport} disabled={submitting}>Import CSV</button>
+            <input ref={fileInputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleImport} />
+          </div>
+        </div>
+        {importSummary && (
+          <p className="text-dim">Imported {importSummary.created} rows, skipped {importSummary.skipped} {importSummary.errors > 0 ? `with ${importSummary.errors} errors` : ''}.</p>
+        )}
         <div className="form-row" style={{ marginTop: 10 }}>
           <select value={form.type} onChange={(e) => set('type', e.target.value)}>
             <option value="income">Income</option>
@@ -228,11 +277,14 @@ export function Transactions() {
       </form>
 
       <div className="card">
-        <div className="slips-heading">
-          <h3>Slips for {formatMonth(activeMonth)}</h3>
-          <span className="text-dim">
-            {total === 0 ? 'nothing logged' : `${visibleRows.length} of ${total} logged`}
-          </span>
+        <div className="slips-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div>
+            <h3>Slips for {formatMonth(activeMonth)}</h3>
+            <span className="text-dim">
+              {total === 0 ? 'nothing logged' : `${visibleRows.length} of ${total} logged`}
+            </span>
+          </div>
+          <button type="button" className="btn-ghost" onClick={exportCsv}>Export CSV</button>
         </div>
         {loading && <div className="loading">Loading…</div>}
         {!loading && (

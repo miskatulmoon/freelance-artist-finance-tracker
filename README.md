@@ -82,6 +82,7 @@ Install the repository hooks once with `uv run --locked pre-commit install`; the
 - **Net vs. gross** — Etsy/PayPal `fee_amount` is subtracted, so "net" reflects what you actually keep.
 - **Cash-flow radar** — balance + committed (agreed/in-progress) commissions vs. your 30-day burn, with a healthy/moderate/low flag and an AI narrative.
 - **AI chat** — POST a question; the backend bundles the computed metrics and asks the LLM to answer strictly from those figures.
+- **CSV import/export** — export the current filtered transactions view as CSV and import transactions from CSV with partial success, validation, and LLM auto-categorization for missing source/category.
 
 ## API
 
@@ -90,6 +91,8 @@ Interactive docs at `/docs`. Main routes:
 | Method | Path | Purpose |
 |---|---|---|
 | GET/POST | `/transactions` | Paged `{items, total, limit, offset}` (filters: source, category, type, date range; sort: date/amount asc/desc) / create (auto-categorizes) |
+| GET | `/transactions/export` | Export filtered transactions as CSV |
+| POST | `/transactions/import` | Import transactions from CSV with validation and auto-categorization |
 | PATCH/DELETE | `/transactions/{id}` | Edit / delete |
 | GET/POST | `/commissions` | Paged `{items, total, limit, offset}` (filter: status; active work first, DB-ordered) / log a commission with its agreed terms |
 | GET | `/commissions/summary` | Income by status: expected / earned / lost, plus counts |

@@ -257,3 +257,25 @@ CHAT_QUESTION_MAX_LENGTH = 2000
 
 class ChatRequest(SQLModel):
     question: str = Field(min_length=1, max_length=CHAT_QUESTION_MAX_LENGTH)
+
+
+class TransactionImportRow(SQLModel):
+    type: Literal["income", "expense"]
+    amount: float = Field(gt=0)
+    description: str = Field(min_length=1)
+    date: DateType
+    fee_amount: float | None = Field(default=None, ge=0)
+    source: Source | None = None
+    category: Category | None = None
+    merchant: str | None = None
+
+
+class TransactionImportError(SQLModel):
+    row: int
+    message: str
+
+
+class TransactionImportSummary(SQLModel):
+    created: int
+    skipped: int
+    errors: list[TransactionImportError]

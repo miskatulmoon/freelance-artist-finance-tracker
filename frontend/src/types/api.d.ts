@@ -40,6 +40,40 @@ export interface paths {
         patch: operations["update_transaction_transactions__transaction_id__patch"];
         trace?: never;
     };
+    "/transactions/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Transactions */
+        get: operations["export_transactions_transactions_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transactions/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Transactions */
+        post: operations["import_transactions_transactions_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/commissions": {
         parameters: {
             query?: never;
@@ -212,10 +246,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/health/detailed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health Detailed */
+        get: operations["health_detailed_health_detailed_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Body_import_transactions_transactions_import_post */
+        Body_import_transactions_transactions_import_post: {
+            /** File */
+            file: string;
+        };
         /** CashflowInsightsResponse */
         CashflowInsightsResponse: {
             radar: components["schemas"]["CashflowRadarRead"];
@@ -427,6 +483,22 @@ export interface components {
             category?: components["schemas"]["Category"] | null;
             /** Merchant */
             merchant?: string | null;
+        };
+        /** TransactionImportError */
+        TransactionImportError: {
+            /** Row */
+            row: number;
+            /** Message */
+            message: string;
+        };
+        /** TransactionImportSummary */
+        TransactionImportSummary: {
+            /** Created */
+            created: number;
+            /** Skipped */
+            skipped: number;
+            /** Errors */
+            errors: components["schemas"]["TransactionImportError"][];
         };
         /**
          * TransactionPage
@@ -641,6 +713,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransactionRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_transactions_transactions_export_get: {
+        parameters: {
+            query?: {
+                source?: components["schemas"]["Source"] | null;
+                category?: components["schemas"]["Category"] | null;
+                type?: ("income" | "expense") | null;
+                from_date?: string | null;
+                to_date?: string | null;
+                sort?: "date_desc" | "date_asc" | "amount_desc" | "amount_asc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_transactions_transactions_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_transactions_transactions_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionImportSummary"];
                 };
             };
             /** @description Validation Error */
@@ -951,6 +1092,26 @@ export interface operations {
         };
     };
     health_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    health_detailed_health_detailed_get: {
         parameters: {
             query?: never;
             header?: never;

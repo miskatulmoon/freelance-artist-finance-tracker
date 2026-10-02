@@ -184,6 +184,35 @@ export const api = {
       body: JSON.stringify(body),
     }),
   deleteTransaction: (id: number) => request<void>(`/transactions/${id}`, { method: 'DELETE' }),
+  exportTransactions: async (params: ListTransactionsParams = {}): Promise<Blob> => {
+    const res = await fetch(`${API_BASE}/transactions/export${toQuery(params)}`)
+    if (!res.ok) {
+      let detail = res.statusText
+      try {
+        const body = await res.json()
+        detail = Array.isArray(body.detail) ? body.detail.map((d: { msg: string }) => d.msg).join(', ') : body.detail
+      } catch {}
+      throw new ApiError(res.status, detail)
+    }
+    return res.blob()
+  },
+  importTransactions: async (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch(`${API_BASE}/transactions/import`, {
+      method: 'POST',
+      body: fd,
+    })
+    if (!res.ok) {
+      let detail = res.statusText
+      try {
+        const body = await res.json()
+        detail = Array.isArray(body.detail) ? body.detail.map((d: { msg: string }) => d.msg).join(', ') : body.detail
+      } catch {}
+      throw new ApiError(res.status, detail)
+    }
+    return res.json() as Promise<OperationResponse<'import_transactions_transactions_import_post', 200>>
+  },
 
   listCommissions: (params: ListCommissionsParams = {}) =>
     request<OperationResponse<'list_commissions_commissions_get', 200>>(`/commissions${toQuery(params)}`),

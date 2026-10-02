@@ -12,6 +12,7 @@ dependencies = [
     "sqlmodel>=0.0.22",
     "uvicorn[standard]>=0.30",
     "python-json-logger>=2.0",
+    "python-multipart>=0.0.9",
 ]
 
 [tool.ruff]

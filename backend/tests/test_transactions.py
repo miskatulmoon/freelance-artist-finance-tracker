@@ -202,3 +202,60 @@ def test_list_total_ignores_pagination_window(client, session):
     assert len(body["items"]) == 2
     assert body["limit"] == 2
     assert body["offset"] == 2
+
+
+def test_export_csv_contains_expected_columns(client, session):
+    from tests.conftest import make_tx
+
+    session.add(make_tx("income", 100.0, "sale", source="etsy", fee=2.0, tx_date=date(2026, 9, 1)))
+    session.add(make_tx("expense", 20.0, "markers", tx_date=date(2026, 9, 2)))
+    session.commit()
+
+    resp = client.get("/transactions/export", params={"from_date": "2026-09-01", "to_date": "2026-09-30"})
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    text = resp.content.decode()
+    lines = text.strip().splitlines()
+    assert lines[0].startswith(
+        "id,type,amount,net_amount,description,date,fee_amount,source,category,merchant,auto_categorized"
+    )
+    assert len(lines) == 3  # header + 2 rows
+
+
+def test_import_csv_creates_transactions(client, session):
+    import io
+
+    csv_content = (
+        "type,amount,description,date,fee_amount,source,merchant\n"
+        "income,50,etsy sale,2026-09-10,,etsy,\n"
+        "expense,15,paints,2026-09-10,,,Blick\n"
+    )
+    file = ("transactions.csv", io.BytesIO(csv_content.encode()), "text/csv")
+    resp = client.post("/transactions/import", files={"file": file})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["created"] == 2
+    assert body["skipped"] == 0
+
+    # Verify they exist
+    all_tx = client.get("/transactions").json()
+    assert all_tx["total"] >= 2
+
+
+def test_import_csv_partial_success(client, session):
+    import io
+
+    csv_content = (
+        "type,amount,description,date\n"
+        "income,30,good,2026-09-10\n"
+        "expense,-5,bad,2026-09-10\n"
+        "income,20,also good,2026-09-10\n"
+    )
+    file = ("transactions.csv", io.BytesIO(csv_content.encode()), "text/csv")
+    resp = client.post("/transactions/import", files={"file": file})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["created"] == 2
+    assert body["skipped"] == 1
+    assert len(body["errors"]) == 1
+    assert body["errors"][0]["row"] == 3
